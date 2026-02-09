@@ -1,15 +1,17 @@
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, Response, Cookie, Header
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, Response, Cookie, Header, UploadFile, File
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 from database import get_db
-from models import User, UserSession, Question, Game, GameRound
+from models import User, UserSession, Question, Game, GameRound, League, LeagueMembership
 from clubs_data import CLUBS_BY_LEAGUE, get_all_clubs, get_club_league
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 import os
 import logging
 import uuid
@@ -18,6 +20,10 @@ import jwt
 import random
 import string
 import requests
+import shutil
+
+UPLOAD_DIR = Path("/app/backend/uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
