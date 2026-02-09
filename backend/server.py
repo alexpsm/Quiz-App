@@ -327,6 +327,22 @@ async def update_profile(data: UpdateProfileRequest, current_user: User = Depend
     if data.phone_number is not None:
         current_user.phone_number = data.phone_number
     
+    # Check if this is initial profile setup — all required fields must be present
+    missing = []
+    if not current_user.username:
+        missing.append("username")
+    if not current_user.favorite_club:
+        missing.append("favorite club")
+    if not current_user.country:
+        missing.append("country of residence")
+    if not current_user.age:
+        missing.append("age")
+    if not current_user.phone_number:
+        missing.append("mobile phone number")
+    
+    if missing:
+        raise HTTPException(status_code=400, detail=f"Required fields missing: {', '.join(missing)}")
+    
     await db.commit()
     await db.refresh(current_user)
     
