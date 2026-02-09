@@ -20,8 +20,16 @@ export const auth = {
 
 export const users = {
   updateProfile: (data) => api.put('/users/me', data),
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/users/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   leaderboard: (limit = 50) => api.get(`/users/leaderboard?limit=${limit}`),
   clubLeaderboard: (club) => api.get(`/users/club-leaderboard${club ? `?club=${encodeURIComponent(club)}` : ''}`),
+  myRank: () => api.get('/users/my-rank'),
   search: (query) => api.get(`/users/search?q=${query}`),
 };
 
@@ -47,6 +55,15 @@ export const games = {
   get: (gameId) => api.get(`/games/${gameId}`),
   selectCategory: (gameId, category) => api.post(`/games/${gameId}/select-category`, null, { params: { category } }),
   submitAnswer: (gameId, data) => api.post(`/games/${gameId}/answer`, data),
+};
+
+export const leagues = {
+  list: (leagueType) => api.get(`/leagues${leagueType ? `?league_type=${leagueType}` : ''}`),
+  create: (data) => api.post('/leagues', data),
+  get: (leagueId) => api.get(`/leagues/${leagueId}`),
+  join: (leagueId) => api.post(`/leagues/${leagueId}/join`),
+  joinByCode: (inviteCode) => api.post(`/leagues/join-code/${inviteCode}`),
+  leave: (leagueId) => api.post(`/leagues/${leagueId}/leave`),
 };
 
 export default api;
