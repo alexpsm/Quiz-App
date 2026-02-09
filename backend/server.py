@@ -274,7 +274,9 @@ async def get_me(current_user: User = Depends(get_current_user)):
         "picture": current_user.picture,
         "skill_rank": current_user.skill_rank,
         "credits": current_user.credits,
-        "is_admin": current_user.is_admin
+        "is_admin": current_user.is_admin,
+        "favorite_club": current_user.favorite_club,
+        "club_knowledge_score": current_user.club_knowledge_score or 0
     }
 
 @api_router.post("/auth/logout")
