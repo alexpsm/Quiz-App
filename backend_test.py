@@ -346,7 +346,8 @@ class QuizBallAPITester:
         )
         
         if success:
-            self.session_token = None
+            # Clear session cookies
+            self.session.cookies.clear()
         
         return success
 
