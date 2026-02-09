@@ -207,6 +207,87 @@ export default function Dashboard() {
           </motion.div>
         )}
 
+        {/* Weekly Club Wars */}
+        {user?.favorite_club && clubWar && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card border-2 border-electric-purple/50 rounded-lg overflow-hidden shadow-electric-purple"
+            data-testid="club-wars-section"
+          >
+            <div className="bg-gradient-to-r from-electric-purple/30 to-neon-pink/30 p-4 border-b border-electric-purple/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Swords className="text-electric-purple" size={22} />
+                  <h3 className="text-lg font-extrabold tracking-tighter uppercase text-white">Weekly Club Wars</h3>
+                </div>
+                <span className="text-[10px] text-gray-400 uppercase bg-black/30 px-2 py-1 rounded">
+                  Ends {new Date(clubWar.week_end).toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-3">
+              {/* Top 5 Clubs */}
+              {clubWar.standings && clubWar.standings.length > 0 ? (
+                <div className="space-y-2">
+                  {clubWar.standings.slice(0, 5).map((club) => {
+                    const isMyClub = club.club_name === user.favorite_club;
+                    return (
+                      <div
+                        key={club.club_name}
+                        data-testid={`war-club-${club.rank}`}
+                        className={`flex items-center gap-3 p-2 rounded-lg ${
+                          isMyClub ? 'bg-electric-purple/20 border border-electric-purple/30' : ''
+                        }`}
+                      >
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                          club.rank === 1 ? 'bg-neon-yellow text-black' :
+                          club.rank === 2 ? 'bg-gray-400 text-black' :
+                          club.rank === 3 ? 'bg-orange-600 text-white' :
+                          'bg-gray-700 text-gray-400'
+                        }`}>
+                          {club.rank}
+                        </span>
+                        <span className={`font-bold text-sm flex-1 truncate ${isMyClub ? 'text-electric-purple' : 'text-white'}`}>
+                          {club.club_name}
+                        </span>
+                        <span className="text-xs text-gray-500">{club.member_count} fans</span>
+                        <span className="text-lg font-black tracking-tighter text-neon-yellow">{club.total_points}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-gray-400 text-sm">No contributions yet this week</p>
+                  <p className="text-xs text-gray-500">Be the first to fight for your club!</p>
+                </div>
+              )}
+
+              {/* My Contribution */}
+              {clubWar.my_contribution && (
+                <div className="bg-black/30 rounded-lg p-3 flex items-center justify-between border border-white/10">
+                  <span className="text-xs text-gray-400 uppercase">Your contribution</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-500">{clubWar.my_contribution.games_played} games</span>
+                    <span className="text-lg font-black tracking-tighter text-electric-purple">{clubWar.my_contribution.points} pts</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Play for Club */}
+              <button
+                onClick={handleClubWarContribute}
+                data-testid="club-war-play-btn"
+                className="w-full bg-gradient-to-r from-electric-purple to-neon-pink hover:from-neon-pink hover:to-electric-purple h-11 px-6 rounded-sm font-bold uppercase tracking-wider text-white transition-all active:scale-95 shadow-electric-purple"
+              >
+                Fight for {user.favorite_club}!
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Active Games */}
         <div>
           <h2 className="text-xl font-bold uppercase tracking-tight mb-4 text-gray-300">Active Games</h2>
