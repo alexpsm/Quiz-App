@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Globe, Phone, Calendar } from 'lucide-react';
+import { Globe, Phone, Calendar, Camera } from 'lucide-react';
 import { users, clubs } from '../lib/api';
 import { PoweredByScore90 } from '../components/Score90Logo';
 import { useAuth } from '../context/AuthContext';
@@ -12,8 +12,11 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const location = useLocation();
   const { checkAuth } = useAuth();
+  const fileInputRef = useRef(null);
   const [username, setUsername] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(0);
+  const [customAvatarFile, setCustomAvatarFile] = useState(null);
+  const [customAvatarPreview, setCustomAvatarPreview] = useState(null);
   const [favoriteClub, setFavoriteClub] = useState('');
   const [country, setCountry] = useState('');
   const [age, setAge] = useState('');
@@ -35,13 +38,34 @@ export default function Onboarding() {
     }
   };
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image must be under 5MB');
+        return;
+      }
+      setCustomAvatarFile(file);
+      setCustomAvatarPreview(URL.createObjectURL(file));
+      setSelectedAvatar(-1); // deselect presets
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${AVATAR_SEEDS[selectedAvatar]}`;
+      // Upload custom avatar if selected
+      let avatarUrl;
+      if (customAvatarFile) {
+        const uploadRes = await users.uploadAvatar(customAvatarFile);
+        avatarUrl = uploadRes.data.avatar;
+      } else {
+        avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${AVATAR_SEEDS[selectedAvatar]}`;
+      }
+
       await users.updateProfile({
         username,
         avatar: avatarUrl,
@@ -83,15 +107,45 @@ export default function Onboarding() {
               <label className="block text-sm font-medium text-gray-400 mb-3 uppercase tracking-wide">
                 Select Avatar
               </label>
-              <div className="grid grid-cols-4 gap-3">
-                {AVATAR_SEEDS.map((seed, index) => (
+              <div className="grid grid-cols-5 gap-3">
+                {/* Upload button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  data-testid="avatar-upload-btn"
+                  className={`aspect-square rounded-lg border-2 border-dashed transition-all flex flex-col items-center justify-center gap-1 ${
+                    customAvatarPreview
+                      ? 'border-neon-pink shadow-neon-pink'
+                      : 'border-white/30 hover:border-neon-blue/60'
+                  }`}
+                >
+                  {customAvatarPreview ? (
+                    <img src={customAvatarPreview} alt="Custom" className="w-full h-full rounded-lg object-cover" />
+                  ) : (
+                    <>
+                      <Camera size={16} className="text-gray-400" />
+                      <span className="text-[10px] text-gray-500">Upload</span>
+                    </>
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  data-testid="avatar-file-input"
+                />
+
+                {/* Preset avatars - show first 4 */}
+                {AVATAR_SEEDS.slice(0, 4).map((seed, index) => (
                   <button
                     key={seed}
                     type="button"
-                    onClick={() => setSelectedAvatar(index)}
+                    onClick={() => { setSelectedAvatar(index); setCustomAvatarFile(null); setCustomAvatarPreview(null); }}
                     data-testid={`avatar-${index}`}
                     className={`aspect-square rounded-lg border-2 transition-all ${
-                      selectedAvatar === index
+                      selectedAvatar === index && !customAvatarPreview
                         ? 'border-neon-pink shadow-neon-pink'
                         : 'border-white/20 hover:border-neon-blue/40'
                     }`}
@@ -99,6 +153,28 @@ export default function Onboarding() {
                     <img
                       src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`}
                       alt={`Avatar ${index + 1}`}
+                      className="w-full h-full rounded-lg"
+                    />
+                  </button>
+                ))}
+              </div>
+              {/* Row 2 of avatars */}
+              <div className="grid grid-cols-5 gap-3 mt-3">
+                {AVATAR_SEEDS.slice(4).map((seed, index) => (
+                  <button
+                    key={seed}
+                    type="button"
+                    onClick={() => { setSelectedAvatar(index + 4); setCustomAvatarFile(null); setCustomAvatarPreview(null); }}
+                    data-testid={`avatar-${index + 4}`}
+                    className={`aspect-square rounded-lg border-2 transition-all ${
+                      selectedAvatar === index + 4 && !customAvatarPreview
+                        ? 'border-neon-pink shadow-neon-pink'
+                        : 'border-white/20 hover:border-neon-blue/40'
+                    }`}
+                  >
+                    <img
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`}
+                      alt={`Avatar ${index + 5}`}
                       className="w-full h-full rounded-lg"
                     />
                   </button>
