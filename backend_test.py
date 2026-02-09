@@ -271,23 +271,29 @@ class QuizBallAPITester:
         if not self.categories:
             print("❌ No categories available")
             return False
+        
+        # Try different categories until we find one with enough questions
+        for category in self.categories:
+            success, response = self.run_test(
+                f"Select Game Category ({category})",
+                "POST",
+                f"games/{self.game_id}/select-category?category={category}",
+                200
+            )
             
-        category = self.categories[0]
-        success, response = self.run_test(
-            "Select Game Category",
-            "POST",
-            f"games/{self.game_id}/select-category?category={category}",
-            200
-        )
+            if success:
+                questions = response.get('questions', [])
+                print(f"   Selected category: {category}")
+                print(f"   Got {len(questions)} questions")
+                if questions:
+                    self.round_questions = questions
+                    return True
+            else:
+                print(f"   Category {category} failed, trying next...")
+                continue
         
-        if success:
-            questions = response.get('questions', [])
-            print(f"   Selected category: {category}")
-            print(f"   Got {len(questions)} questions")
-            if questions:
-                self.round_questions = questions
-        
-        return success
+        print("❌ No categories have enough questions")
+        return False
 
     def test_submit_answer(self):
         """Test submitting an answer"""
