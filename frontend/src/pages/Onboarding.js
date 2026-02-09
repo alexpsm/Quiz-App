@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { users } from '../lib/api';
+import { users, clubs } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
 const AVATAR_SEEDS = ['Felix', 'Aneka', 'Garfield', 'Boots', 'Tigger', 'Milo', 'Simba', 'Luna'];
@@ -12,8 +12,23 @@ export default function Onboarding() {
   const { checkAuth } = useAuth();
   const [username, setUsername] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(0);
+  const [favoriteClub, setFavoriteClub] = useState('');
+  const [clubsByLeague, setClubsByLeague] = useState({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadClubs();
+  }, []);
+
+  const loadClubs = async () => {
+    try {
+      const response = await clubs.getAll();
+      setClubsByLeague(response.data);
+    } catch (error) {
+      console.error('Failed to load clubs:', error);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +37,7 @@ export default function Onboarding() {
 
     try {
       const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${AVATAR_SEEDS[selectedAvatar]}`;
-      await users.updateProfile({ username, avatar: avatarUrl });
+      await users.updateProfile({ username, avatar: avatarUrl, favorite_club: favoriteClub });
       await checkAuth();
       navigate('/dashboard');
     } catch (err) {
