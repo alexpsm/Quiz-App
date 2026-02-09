@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User as UserIcon, Chrome } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { PoweredByScore90 } from '../components/Score90Logo';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -13,7 +14,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const handleGoogleLogin = () => {
-    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
     const redirectUrl = window.location.origin + '/auth/callback';
     window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
   };
@@ -39,23 +39,26 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-5">
+    <div className="min-h-screen bg-gradient-to-br from-background via-[#1a1a2e] to-background flex items-center justify-center p-5">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md"
       >
-        {/* Score90 Logo */}
+        {/* QuizBall Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-extrabold tracking-tighter uppercase text-primary mb-2">
+          <h1 className="text-6xl font-extrabold tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-neon-pink to-neon-yellow mb-3">
             QuizBall
           </h1>
-          <p className="text-sm text-gray-400 uppercase tracking-wider">Score90 Football Trivia</p>
+          <PoweredByScore90 size="md" className="justify-center mb-3" />
+          <p className="text-base text-gray-300">
+            Prove your <span className="text-neon-yellow font-bold">Ball Knowledge</span>
+          </p>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-card border border-white/10 rounded-lg p-6 shadow-2xl">
-          <h2 className="text-2xl font-bold uppercase tracking-tight text-center mb-6">
+        <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-6 shadow-2xl shadow-neon-blue/20 backdrop-blur-sm">
+          <h2 className="text-2xl font-bold uppercase tracking-tight text-center mb-6 text-white">
             {isRegister ? 'Create Account' : 'Welcome Back'}
           </h2>
 
@@ -63,7 +66,7 @@ export default function Login() {
           <button
             onClick={handleGoogleLogin}
             data-testid="google-login-btn"
-            className="w-full bg-white text-black hover:bg-gray-100 h-12 px-6 rounded-sm font-bold uppercase tracking-wider flex items-center justify-center gap-3 transition-all active:scale-95 mb-6"
+            className="w-full bg-white text-black hover:bg-gray-100 h-12 px-6 rounded-sm font-bold uppercase tracking-wider flex items-center justify-center gap-3 transition-all active:scale-95 mb-6 shadow-lg hover:shadow-neon-blue"
           >
             <Chrome size={20} />
             Continue with Google
@@ -90,7 +93,7 @@ export default function Login() {
                     data-testid="register-name-input"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-black/50 border border-white/20 focus:border-primary focus:ring-1 focus:ring-primary h-12 rounded-sm text-white placeholder:text-white/30 pl-11 pr-4 outline-none"
+                    className="w-full bg-black/50 border-2 border-neon-blue/30 focus:border-neon-pink focus:ring-2 focus:ring-neon-pink/50 h-12 rounded-sm text-white placeholder:text-white/30 pl-11 pr-4 outline-none transition-all"
                     placeholder="Your name"
                     required
                   />
@@ -107,7 +110,7 @@ export default function Login() {
                   data-testid="email-input"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full bg-black/50 border border-white/20 focus:border-primary focus:ring-1 focus:ring-primary h-12 rounded-sm text-white placeholder:text-white/30 pl-11 pr-4 outline-none"
+                  className="w-full bg-black/50 border-2 border-neon-blue/30 focus:border-neon-pink focus:ring-2 focus:ring-neon-pink/50 h-12 rounded-sm text-white placeholder:text-white/30 pl-11 pr-4 outline-none transition-all"
                   placeholder="your@email.com"
                   required
                 />
@@ -123,7 +126,7 @@ export default function Login() {
                   data-testid="password-input"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full bg-black/50 border border-white/20 focus:border-primary focus:ring-1 focus:ring-primary h-12 rounded-sm text-white placeholder:text-white/30 pl-11 pr-4 outline-none"
+                  className="w-full bg-black/50 border-2 border-neon-blue/30 focus:border-neon-pink focus:ring-2 focus:ring-neon-pink/50 h-12 rounded-sm text-white placeholder:text-white/30 pl-11 pr-4 outline-none transition-all"
                   placeholder="••••••••"
                   required
                 />
@@ -131,7 +134,7 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="bg-destructive/10 border border-destructive/50 rounded-sm p-3 text-sm text-destructive">
+              <div className="bg-destructive/10 border-2 border-destructive rounded-sm p-3 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -140,7 +143,7 @@ export default function Login() {
               type="submit"
               data-testid="submit-btn"
               disabled={loading}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all active:scale-95 disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-neon-blue to-neon-pink hover:from-neon-pink hover:to-neon-yellow h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-neon-blue hover:shadow-neon-pink transition-all active:scale-95 disabled:opacity-50 text-white"
             >
               {loading ? 'Processing...' : isRegister ? 'Create Account' : 'Sign In'}
             </button>
@@ -149,7 +152,7 @@ export default function Login() {
           <div className="mt-6 text-center">
             <button
               onClick={() => setIsRegister(!isRegister)}
-              className="text-sm text-gray-400 hover:text-white transition-colors"
+              className="text-sm text-neon-blue hover:text-neon-pink transition-colors"
             >
               {isRegister ? 'Already have an account? Sign in' : "Don't have an account? Register"}
             </button>
