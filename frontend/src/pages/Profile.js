@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Target, LogOut, Trophy, Clock, Globe, Calendar, Phone } from 'lucide-react';
+import { Brain, Target, LogOut, Trophy, Clock, Globe, Calendar, Shield, Camera } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { PoweredByScore90 } from '../components/Score90Logo';
@@ -9,10 +9,13 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, checkAuth } = useAuth();
+  const fileInputRef = useRef(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [gameHistory, setGameHistory] = useState([]);
+  const [ranks, setRanks] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -20,16 +23,32 @@ export default function Profile() {
 
   const loadData = async () => {
     try {
-      const [lbRes, histRes] = await Promise.all([
+      const [lbRes, histRes, rankRes] = await Promise.all([
         users.leaderboard(10),
-        games.history(10)
+        games.history(10),
+        users.myRank()
       ]);
       setLeaderboard(lbRes.data);
       setGameHistory(histRes.data);
+      setRanks(rankRes.data);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      await users.uploadAvatar(file);
+      await checkAuth();
+    } catch (err) {
+      console.error('Upload failed:', err);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -48,18 +67,32 @@ export default function Profile() {
 
         {/* Profile Card */}
         <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-6 text-center shadow-neon-blue backdrop-blur-sm">
-          <img
-            src={user?.avatar}
-            alt="Avatar"
-            className="w-24 h-24 rounded-full border-4 border-neon-pink mx-auto mb-4 shadow-neon-pink"
-          />
-          <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-1" data-testid="profile-username">
+          <div className="relative inline-block">
+            <img
+              src={user?.avatar}
+              alt="Avatar"
+              className="w-24 h-24 rounded-full border-4 border-neon-pink mx-auto mb-1 shadow-neon-pink object-cover"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              data-testid="change-avatar-btn"
+              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-neon-blue border-2 border-background flex items-center justify-center hover:bg-neon-pink transition-colors"
+            >
+              {uploading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Camera size={14} className="text-white" />
+              )}
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" data-testid="profile-avatar-input" />
+          </div>
+          <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-1 mt-2" data-testid="profile-username">
             @{user?.username}
           </h2>
           <p className="text-sm text-gray-400 mb-2">{user?.email}</p>
           
           {/* Extra Info */}
-          <div className="flex items-center justify-center gap-4 text-xs text-gray-500 mb-4">
+          <div className="flex items-center justify-center gap-4 text-xs text-gray-500 mb-4 flex-wrap">
             {user?.country && (
               <span className="flex items-center gap-1"><Globe size={12} /> {user.country}</span>
             )}
@@ -85,6 +118,52 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Your Rank Section */}
+        {ranks && (
+          <div>
+            <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-3 flex items-center gap-2">
+              <Trophy size={20} className="text-neon-yellow" />
+              Your Rank
+            </h3>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-3 text-center" data-testid="profile-rank-global">
+                <Globe className="text-neon-blue mx-auto mb-1" size={20} />
+                <p className="text-xl font-black tracking-tighter text-neon-blue">#{ranks.global?.rank || '-'}</p>
+                <p className="text-[10px] text-gray-500 uppercase">Global</p>
+                <p className="text-[10px] text-gray-600">of {ranks.global?.total || 0}</p>
+              </div>
+              <div className="bg-card border-2 border-neon-yellow/30 rounded-lg p-3 text-center" data-testid="profile-rank-club">
+                <Shield className="text-neon-yellow mx-auto mb-1" size={20} />
+                <p className="text-xl font-black tracking-tighter text-neon-yellow">#{ranks.club?.rank || '-'}</p>
+                <p className="text-[10px] text-gray-500 uppercase truncate">{ranks.club?.name || 'No Club'}</p>
+                <p className="text-[10px] text-gray-600">of {ranks.club?.total || 0}</p>
+              </div>
+              <div className="bg-card border-2 border-neon-pink/30 rounded-lg p-3 text-center" data-testid="profile-rank-country">
+                <Globe className="text-neon-pink mx-auto mb-1" size={20} />
+                <p className="text-xl font-black tracking-tighter text-neon-pink">#{ranks.country?.rank || '-'}</p>
+                <p className="text-[10px] text-gray-500 uppercase truncate">{ranks.country?.name || 'No Country'}</p>
+                <p className="text-[10px] text-gray-600">of {ranks.country?.total || 0}</p>
+              </div>
+            </div>
+            {ranks.leagues && ranks.leagues.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {ranks.leagues.map((lr) => (
+                  <div key={lr.league_id} className="bg-card border-2 border-electric-purple/30 rounded-lg px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Trophy className="text-electric-purple" size={16} />
+                      <span className="text-sm font-bold text-white truncate">{lr.league_name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-black tracking-tighter text-electric-purple">#{lr.rank}</span>
+                      <span className="text-xs text-gray-500">/ {lr.total}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Game History */}
         <div>
           <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-4 flex items-center gap-2">
@@ -109,16 +188,10 @@ export default function Profile() {
                   }`}
                   data-testid={`history-${game.id}`}
                 >
-                  <img
-                    src={game.opponent_avatar}
-                    alt={game.opponent_username}
-                    className="w-10 h-10 rounded-full border-2 border-neon-blue/30"
-                  />
+                  <img src={game.opponent_avatar} alt={game.opponent_username} className="w-10 h-10 rounded-full border-2 border-neon-blue/30" />
                   <div className="flex-1">
                     <p className="font-bold text-white text-sm">vs @{game.opponent_username}</p>
-                    <p className="text-xs text-gray-500">
-                      {game.date ? new Date(game.date).toLocaleDateString() : ''}
-                    </p>
+                    <p className="text-xs text-gray-500">{game.date ? new Date(game.date).toLocaleDateString() : ''}</p>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-black tracking-tighter">
@@ -144,7 +217,7 @@ export default function Profile() {
           </h3>
           
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading leaderboard...</div>
+            <div className="text-center py-8 text-gray-500">Loading...</div>
           ) : (
             <div className="space-y-2">
               {leaderboard.map((player, index) => (
@@ -155,31 +228,20 @@ export default function Profile() {
                   transition={{ delay: index * 0.05 }}
                   className="bg-card border-2 border-neon-blue/20 hover:border-neon-pink/50 rounded-lg p-4 flex items-center gap-4 transition-all"
                 >
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                      index === 0
-                        ? 'bg-gradient-to-br from-neon-yellow to-neon-orange text-black shadow-neon-yellow'
-                        : index === 1
-                        ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-black'
-                        : index === 2
-                        ? 'bg-gradient-to-br from-orange-600 to-orange-800 text-white'
-                        : 'bg-gray-700 text-gray-400'
-                    }`}
-                  >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                    index === 0 ? 'bg-gradient-to-br from-neon-yellow to-neon-orange text-black shadow-neon-yellow'
+                    : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-black'
+                    : index === 2 ? 'bg-gradient-to-br from-orange-600 to-orange-800 text-white'
+                    : 'bg-gray-700 text-gray-400'
+                  }`}>
                     {index + 1}
                   </div>
-                  <img
-                    src={player.avatar}
-                    alt={player.username}
-                    className="w-10 h-10 rounded-full border-2 border-neon-blue/30"
-                  />
+                  <img src={player.avatar} alt={player.username} className="w-10 h-10 rounded-full border-2 border-neon-blue/30" />
                   <div className="flex-1">
                     <p className="font-bold text-white">@{player.username}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-black tracking-tighter text-neon-yellow">
-                      {player.skill_rank}
-                    </p>
+                    <p className="text-xl font-black tracking-tighter text-neon-yellow">{player.skill_rank}</p>
                     <p className="text-xs text-gray-500">Ball Knowledge</p>
                   </div>
                 </motion.div>
