@@ -74,20 +74,17 @@ class TestAvatarUpload:
     
     def test_avatar_upload_accepts_image(self, auth_session):
         """Test that avatar upload accepts image and returns avatar URL"""
-        # Create a small test image (1x1 pixel PNG)
         import base64
         png_1x1 = base64.b64decode(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
         )
         
+        # Create a fresh session for file uploads (Content-Type must not be preset)
+        upload_session = requests.Session()
+        upload_session.cookies.update(auth_session.cookies)
+        
         files = {"file": ("test_avatar.png", png_1x1, "image/png")}
-        # Remove Content-Type header for multipart upload
-        headers = {k: v for k, v in auth_session.headers.items() if k.lower() != 'content-type'}
-        response = auth_session.post(
-            f"{BASE_URL}/api/users/avatar",
-            files=files,
-            headers=headers
-        )
+        response = upload_session.post(f"{BASE_URL}/api/users/avatar", files=files)
         
         assert response.status_code == 200, f"Avatar upload failed: {response.text}"
         data = response.json()
@@ -98,13 +95,11 @@ class TestAvatarUpload:
     
     def test_avatar_upload_rejects_non_image(self, auth_session):
         """Test that avatar upload rejects non-image files"""
+        upload_session = requests.Session()
+        upload_session.cookies.update(auth_session.cookies)
+        
         files = {"file": ("test.txt", b"This is not an image", "text/plain")}
-        headers = {k: v for k, v in auth_session.headers.items() if k.lower() != 'content-type'}
-        response = auth_session.post(
-            f"{BASE_URL}/api/users/avatar",
-            files=files,
-            headers=headers
-        )
+        response = upload_session.post(f"{BASE_URL}/api/users/avatar", files=files)
         
         assert response.status_code == 400, f"Expected 400 for non-image file, got {response.status_code}"
         print("✅ Non-image file correctly rejected")
@@ -116,10 +111,12 @@ class TestAvatarUpload:
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
         )
         
+        upload_session = requests.Session()
+        upload_session.cookies.update(auth_session.cookies)
+        
         files = {"file": ("profile_avatar.png", png_1x1, "image/png")}
-        headers = {k: v for k, v in auth_session.headers.items() if k.lower() != 'content-type'}
-        upload_resp = auth_session.post(f"{BASE_URL}/api/users/avatar", files=files, headers=headers)
-        assert upload_resp.status_code == 200
+        upload_resp = upload_session.post(f"{BASE_URL}/api/users/avatar", files=files)
+        assert upload_resp.status_code == 200, f"Upload failed: {upload_resp.text}"
         
         uploaded_avatar_url = upload_resp.json()["avatar"]
         
