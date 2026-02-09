@@ -1,28 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Target, LogOut } from 'lucide-react';
+import { Brain, Target, LogOut, Trophy, Clock, Globe, Calendar, Phone } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { PoweredByScore90 } from '../components/Score90Logo';
-import { users } from '../lib/api';
+import { users, games } from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [leaderboard, setLeaderboard] = useState([]);
+  const [gameHistory, setGameHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadLeaderboard();
+    loadData();
   }, []);
 
-  const loadLeaderboard = async () => {
+  const loadData = async () => {
     try {
-      const response = await users.leaderboard(10);
-      setLeaderboard(response.data);
+      const [lbRes, histRes] = await Promise.all([
+        users.leaderboard(10),
+        games.history(10)
+      ]);
+      setLeaderboard(lbRes.data);
+      setGameHistory(histRes.data);
     } catch (error) {
-      console.error('Failed to load leaderboard:', error);
+      console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
@@ -48,12 +53,25 @@ export default function Profile() {
             alt="Avatar"
             className="w-24 h-24 rounded-full border-4 border-neon-pink mx-auto mb-4 shadow-neon-pink"
           />
-          <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-1">
+          <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-1" data-testid="profile-username">
             @{user?.username}
           </h2>
-          <p className="text-sm text-gray-400 mb-4">{user?.email}</p>
+          <p className="text-sm text-gray-400 mb-2">{user?.email}</p>
           
-          <div className="grid grid-cols-2 gap-4 mt-6">
+          {/* Extra Info */}
+          <div className="flex items-center justify-center gap-4 text-xs text-gray-500 mb-4">
+            {user?.country && (
+              <span className="flex items-center gap-1"><Globe size={12} /> {user.country}</span>
+            )}
+            {user?.age && (
+              <span className="flex items-center gap-1"><Calendar size={12} /> {user.age} yrs</span>
+            )}
+            {user?.favorite_club && (
+              <span className="bg-neon-yellow/20 text-neon-yellow px-2 py-0.5 rounded text-xs font-bold">{user.favorite_club}</span>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
             <div className="bg-black/40 backdrop-blur-xl border-2 border-neon-yellow/50 rounded-lg p-4 shadow-neon-yellow">
               <Brain className="text-neon-yellow mx-auto mb-2" size={28} />
               <p className="text-3xl font-black tracking-tighter text-neon-yellow">{user?.skill_rank}</p>
@@ -67,9 +85,61 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Game History */}
+        <div>
+          <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-4 flex items-center gap-2">
+            <Clock size={20} className="text-neon-pink" />
+            Game History
+          </h3>
+          
+          {gameHistory.length === 0 ? (
+            <div className="bg-card border-2 border-white/10 rounded-lg p-6 text-center">
+              <p className="text-gray-400">No completed games yet</p>
+              <p className="text-sm text-gray-500 mt-1">Play some duels to see your history!</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {gameHistory.map((game) => (
+                <motion.div
+                  key={game.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={`bg-card border-2 rounded-lg p-4 flex items-center gap-3 ${
+                    game.won ? 'border-neon-yellow/30' : 'border-white/10'
+                  }`}
+                  data-testid={`history-${game.id}`}
+                >
+                  <img
+                    src={game.opponent_avatar}
+                    alt={game.opponent_username}
+                    className="w-10 h-10 rounded-full border-2 border-neon-blue/30"
+                  />
+                  <div className="flex-1">
+                    <p className="font-bold text-white text-sm">vs @{game.opponent_username}</p>
+                    <p className="text-xs text-gray-500">
+                      {game.date ? new Date(game.date).toLocaleDateString() : ''}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-black tracking-tighter">
+                      <span className={game.won ? 'text-neon-yellow' : 'text-gray-400'}>{game.my_score}</span>
+                      <span className="text-gray-600 mx-1">-</span>
+                      <span className={!game.won ? 'text-neon-yellow' : 'text-gray-400'}>{game.opponent_score}</span>
+                    </div>
+                    <span className={`text-xs font-bold uppercase ${game.won ? 'text-neon-yellow' : 'text-destructive'}`}>
+                      {game.won ? 'Won' : 'Lost'}
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Leaderboard */}
         <div>
-          <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-4">
+          <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-4 flex items-center gap-2">
+            <Trophy size={20} className="text-neon-yellow" />
             Top Players
           </h3>
           
