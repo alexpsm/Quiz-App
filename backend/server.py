@@ -6,6 +6,7 @@ from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 from database import get_db
 from models import User, UserSession, Question, Game, GameRound
+from clubs_data import CLUBS_BY_LEAGUE, get_all_clubs, get_club_league
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone, timedelta
