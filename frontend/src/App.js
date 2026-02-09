@@ -33,6 +33,12 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Redirect to onboarding if required profile fields are missing
+  const profileComplete = user.username && user.favorite_club && user.country && user.age && user.phone_number;
+  if (!profileComplete && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   return children;
 };
 
