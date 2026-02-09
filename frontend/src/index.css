@@ -12,10 +12,37 @@
     margin: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #0f0f23 100%);
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-headings;
+  }
+}
+
+@layer utilities {
+  .text-glow-blue {
+    text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+  }
+  
+  .text-glow-pink {
+    text-shadow: 0 0 20px rgba(255, 0, 110, 0.5);
+  }
+  
+  .text-glow-yellow {
+    text-shadow: 0 0 20px rgba(255, 190, 11, 0.5);
+  }
+  
+  .border-glow-blue {
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.3), inset 0 0 20px rgba(0, 217, 255, 0.1);
+  }
+  
+  .border-glow-pink {
+    box-shadow: 0 0 20px rgba(255, 0, 110, 0.3), inset 0 0 20px rgba(255, 0, 110, 0.1);
+  }
+  
+  .border-glow-yellow {
+    box-shadow: 0 0 20px rgba(255, 190, 11, 0.3), inset 0 0 20px rgba(255, 190, 11, 0.1);
   }
 }
 

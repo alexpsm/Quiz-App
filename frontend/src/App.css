@@ -1,4 +1,29 @@
 .App {
   min-height: 100vh;
-  background-color: #0a0a0a;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #0f0f23 100%);
+}
+
+.neon-border {
+  border: 2px solid;
+  border-image: linear-gradient(45deg, #00d9ff, #ff006e, #ffbe0b) 1;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #00d9ff 0%, #ff006e 50%, #ffbe0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 217, 255, 0.8);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
