@@ -55,6 +55,15 @@ export default function Dashboard() {
     }
   };
 
+  const handleClubWarContribute = async () => {
+    try {
+      const response = await api.post('/club-wars/contribute');
+      navigate(`/game/${response.data.game_id}`);
+    } catch (error) {
+      console.error('Club War contribution failed:', error);
+    }
+  };
+
   return (
     <Layout>
       <div className="p-5 space-y-6">
