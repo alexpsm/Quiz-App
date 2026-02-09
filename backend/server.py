@@ -303,6 +303,9 @@ async def update_profile(data: UpdateProfileRequest, current_user: User = Depend
     if data.avatar:
         current_user.avatar = data.avatar
     
+    if data.favorite_club:
+        current_user.favorite_club = data.favorite_club
+    
     await db.commit()
     await db.refresh(current_user)
     
@@ -313,8 +316,20 @@ async def update_profile(data: UpdateProfileRequest, current_user: User = Depend
         "username": current_user.username,
         "avatar": current_user.avatar,
         "skill_rank": current_user.skill_rank,
-        "credits": current_user.credits
+        "credits": current_user.credits,
+        "favorite_club": current_user.favorite_club,
+        "club_knowledge_score": current_user.club_knowledge_score or 0
     }
+
+@api_router.get("/clubs")
+async def get_clubs():
+    """Get all available clubs organized by league"""
+    return CLUBS_BY_LEAGUE
+
+@api_router.get("/clubs/list")
+async def get_clubs_list():
+    """Get flat list of all clubs"""
+    return get_all_clubs()
 
 @api_router.get("/users/leaderboard")
 async def get_leaderboard(limit: int = 50, db: AsyncSession = Depends(get_db)):
