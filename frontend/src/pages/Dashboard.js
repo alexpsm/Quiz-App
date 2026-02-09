@@ -36,6 +36,15 @@ export default function Dashboard() {
     }
   };
 
+  const handleClubChallenge = async () => {
+    try {
+      const response = await games.clubChallenge();
+      navigate(`/game/${response.data.game_id}`);
+    } catch (error) {
+      console.error('Club Challenge failed:', error);
+    }
+  };
+
   return (
     <Layout>
       <div className="p-5 space-y-6">
