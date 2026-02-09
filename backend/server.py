@@ -1204,6 +1204,285 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
         "correct_option": question.correct_option if is_correct else None
     }
 
+# ========== STRIPE PAYMENT ENDPOINTS ==========
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+from fastapi import Request
+from dotenv import load_dotenv
+load_dotenv()
+
+CREDIT_PACKAGES = {
+    "credits_100": {"amount": 0.99, "credits": 100, "label": "100 Credits"},
+    "credits_500": {"amount": 3.99, "credits": 500, "label": "500 Credits"},
+    "credits_1000": {"amount": 6.99, "credits": 1000, "label": "1000 Credits"},
+    "premium": {"amount": 4.99, "credits": 0, "label": "Premium (Ad-Free)", "is_premium": True},
+}
+
+class CheckoutRequest(BaseModel):
+    package_id: str
+    origin_url: str
+
+@api_router.post("/payments/checkout")
+async def create_checkout(data: CheckoutRequest, request: Request, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Create a Stripe checkout session for a credit package"""
+    if data.package_id not in CREDIT_PACKAGES:
+        raise HTTPException(status_code=400, detail="Invalid package")
+    
+    package = CREDIT_PACKAGES[data.package_id]
+    stripe_api_key = os.environ.get("STRIPE_API_KEY")
+    
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}/api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url=webhook_url)
+    
+    success_url = f"{data.origin_url}/store?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{data.origin_url}/store"
+    
+    checkout_metadata = {
+        "user_id": current_user.user_id,
+        "package_id": data.package_id,
+        "credits": str(package.get("credits", 0)),
+        "is_premium": str(package.get("is_premium", False)),
+    }
+    
+    checkout_request = CheckoutSessionRequest(
+        amount=package["amount"],
+        currency="usd",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata=checkout_metadata
+    )
+    
+    session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(checkout_request)
+    
+    # Create payment transaction record
+    transaction = PaymentTransaction(
+        id=str(uuid.uuid4()),
+        user_id=current_user.user_id,
+        session_id=session.session_id,
+        package_id=data.package_id,
+        amount=package["amount"],
+        currency="usd",
+        credits_to_add=package.get("credits", 0),
+        is_premium=package.get("is_premium", False),
+        payment_status="pending",
+        status="initiated",
+        payment_metadata=checkout_metadata
+    )
+    db.add(transaction)
+    await db.commit()
+    
+    return {"url": session.url, "session_id": session.session_id}
+
+@api_router.get("/payments/status/{session_id}")
+async def get_payment_status(session_id: str, request: Request, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Check payment status and fulfill if paid"""
+    stripe_api_key = os.environ.get("STRIPE_API_KEY")
+    
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}/api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url=webhook_url)
+    
+    checkout_status: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
+    
+    # Update transaction
+    result = await db.execute(
+        select(PaymentTransaction).where(PaymentTransaction.session_id == session_id)
+    )
+    transaction = result.scalar_one_or_none()
+    
+    if transaction:
+        # Only fulfill once
+        already_fulfilled = transaction.status == "completed"
+        
+        transaction.payment_status = checkout_status.payment_status
+        transaction.status = "completed" if checkout_status.payment_status == "paid" else checkout_status.status
+        
+        # Add credits or premium only once
+        if checkout_status.payment_status == "paid" and not already_fulfilled:
+            if transaction.credits_to_add > 0:
+                current_user.credits = (current_user.credits or 0) + transaction.credits_to_add
+            if transaction.is_premium:
+                current_user.is_admin = False  # placeholder for premium flag
+        
+        await db.commit()
+    
+    return {
+        "status": checkout_status.status,
+        "payment_status": checkout_status.payment_status,
+        "amount_total": checkout_status.amount_total,
+        "currency": checkout_status.currency
+    }
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
+    """Handle Stripe webhook events"""
+    stripe_api_key = os.environ.get("STRIPE_API_KEY")
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}/api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url=webhook_url)
+    
+    body = await request.body()
+    signature = request.headers.get("Stripe-Signature", "")
+    
+    try:
+        webhook_response = await stripe_checkout.handle_webhook(body, signature)
+        
+        if webhook_response.payment_status == "paid":
+            result = await db.execute(
+                select(PaymentTransaction).where(PaymentTransaction.session_id == webhook_response.session_id)
+            )
+            transaction = result.scalar_one_or_none()
+            
+            if transaction and transaction.status != "completed":
+                transaction.payment_status = "paid"
+                transaction.status = "completed"
+                
+                # Fulfill
+                user_result = await db.execute(select(User).where(User.user_id == transaction.user_id))
+                user = user_result.scalar_one_or_none()
+                if user:
+                    if transaction.credits_to_add > 0:
+                        user.credits = (user.credits or 0) + transaction.credits_to_add
+                
+                await db.commit()
+        
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return {"status": "error"}
+
+# ========== CLUB WARS ENDPOINTS ==========
+
+def get_current_week_bounds():
+    """Get the start and end of the current week (Monday-Sunday)"""
+    now = datetime.now(timezone.utc)
+    start_of_week = now - timedelta(days=now.weekday())
+    start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_week = start_of_week + timedelta(days=7)
+    return start_of_week, end_of_week
+
+async def get_or_create_current_war(db: AsyncSession):
+    """Get or create the current week's club war"""
+    week_start, week_end = get_current_week_bounds()
+    
+    result = await db.execute(
+        select(ClubWar).where(
+            ClubWar.week_start == week_start,
+            ClubWar.status == 'active'
+        )
+    )
+    war = result.scalar_one_or_none()
+    
+    if not war:
+        war = ClubWar(
+            id=str(uuid.uuid4()),
+            week_start=week_start,
+            week_end=week_end,
+            status='active'
+        )
+        db.add(war)
+        await db.commit()
+        await db.refresh(war)
+    
+    return war
+
+@api_router.get("/club-wars/current")
+async def get_current_club_war(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Get the current week's club war leaderboard"""
+    war = await get_or_create_current_war(db)
+    
+    # Aggregate club scores
+    result = await db.execute(
+        select(
+            ClubWarContribution.club_name,
+            func.sum(ClubWarContribution.points).label('total_points'),
+            func.sum(ClubWarContribution.games_played).label('total_games'),
+            func.count(ClubWarContribution.user_id.distinct()).label('member_count')
+        ).where(
+            ClubWarContribution.club_war_id == war.id
+        ).group_by(ClubWarContribution.club_name).order_by(func.sum(ClubWarContribution.points).desc())
+    )
+    club_standings = result.all()
+    
+    # Get user's contribution
+    user_contrib = None
+    if current_user.favorite_club:
+        user_result = await db.execute(
+            select(ClubWarContribution).where(
+                ClubWarContribution.club_war_id == war.id,
+                ClubWarContribution.user_id == current_user.user_id
+            )
+        )
+        user_contrib_obj = user_result.scalar_one_or_none()
+        if user_contrib_obj:
+            user_contrib = {
+                "points": user_contrib_obj.points,
+                "games_played": user_contrib_obj.games_played
+            }
+    
+    return {
+        "war_id": war.id,
+        "week_start": war.week_start.isoformat(),
+        "week_end": war.week_end.isoformat(),
+        "standings": [{
+            "rank": idx + 1,
+            "club_name": row.club_name,
+            "total_points": row.total_points or 0,
+            "total_games": row.total_games or 0,
+            "member_count": row.member_count or 0
+        } for idx, row in enumerate(club_standings)],
+        "my_contribution": user_contrib,
+        "my_club": current_user.favorite_club
+    }
+
+@api_router.post("/club-wars/contribute")
+async def contribute_to_club_war(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Start a quick play game that contributes to the club war"""
+    if not current_user.favorite_club:
+        raise HTTPException(status_code=400, detail="Select a club first to join Club Wars")
+    
+    # Create a bot game for contribution
+    bot = await get_or_create_bot(db)
+    bot.skill_rank = current_user.skill_rank
+    
+    game = Game(
+        id=str(uuid.uuid4()),
+        player1_id=current_user.user_id,
+        player2_id=bot.user_id,
+        current_round=1,
+        status='active',
+        turn_player_id=current_user.user_id
+    )
+    db.add(game)
+    
+    # Create or update contribution
+    war = await get_or_create_current_war(db)
+    
+    result = await db.execute(
+        select(ClubWarContribution).where(
+            ClubWarContribution.club_war_id == war.id,
+            ClubWarContribution.user_id == current_user.user_id
+        )
+    )
+    contrib = result.scalar_one_or_none()
+    
+    if not contrib:
+        contrib = ClubWarContribution(
+            id=str(uuid.uuid4()),
+            club_war_id=war.id,
+            user_id=current_user.user_id,
+            club_name=current_user.favorite_club,
+            games_played=1
+        )
+        db.add(contrib)
+    else:
+        contrib.games_played += 1
+    
+    await db.commit()
+    await db.refresh(game)
+    
+    return {"game_id": game.id, "war_id": war.id}
+
 app.include_router(api_router)
 
 # Serve uploaded files
