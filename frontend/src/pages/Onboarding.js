@@ -70,9 +70,9 @@ export default function Onboarding() {
         username,
         avatar: avatarUrl,
         favorite_club: favoriteClub,
-        country: country || undefined,
-        age: age ? parseInt(age) : undefined,
-        phone_number: phoneNumber || undefined,
+        country,
+        age: parseInt(age),
+        phone_number: phoneNumber,
       });
       await checkAuth();
       navigate('/dashboard');
@@ -242,6 +242,7 @@ export default function Onboarding() {
                   onChange={(e) => setCountry(e.target.value)}
                   className="w-full bg-black/50 border-2 border-neon-blue/30 focus:border-neon-pink focus:ring-2 focus:ring-neon-pink/50 h-12 rounded-sm text-white placeholder:text-white/30 pl-10 pr-4 outline-none transition-all"
                   placeholder="e.g. United Kingdom"
+                  required
                 />
               </div>
             </div>
@@ -263,6 +264,7 @@ export default function Onboarding() {
                     placeholder="25"
                     min={13}
                     max={120}
+                    required
                   />
                 </div>
               </div>
@@ -279,6 +281,7 @@ export default function Onboarding() {
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     className="w-full bg-black/50 border-2 border-neon-blue/30 focus:border-neon-pink focus:ring-2 focus:ring-neon-pink/50 h-12 rounded-sm text-white placeholder:text-white/30 pl-10 pr-4 outline-none transition-all"
                     placeholder="+44..."
+                    required
                   />
                 </div>
               </div>
@@ -293,7 +296,7 @@ export default function Onboarding() {
             <button
               type="submit"
               data-testid="continue-btn"
-              disabled={loading || !username || username.length < 3 || !favoriteClub}
+              disabled={loading || !username || username.length < 3 || !favoriteClub || !country || !age || !phoneNumber}
               className="w-full bg-gradient-to-r from-neon-blue via-neon-pink to-neon-yellow hover:from-neon-yellow hover:via-neon-pink hover:to-neon-blue h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-neon-blue hover:shadow-neon-pink transition-all active:scale-95 disabled:opacity-50 text-white"
             >
               {loading ? 'Saving...' : 'Continue to QuizBall'}
