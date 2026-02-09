@@ -18,6 +18,10 @@ export default function Login() {
     window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
   };
 
+  const handleSocialLogin = (provider) => {
+    setError(`${provider} login requires OAuth credentials. Please configure ${provider} App ID in settings.`);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -62,15 +66,52 @@ export default function Login() {
             {isRegister ? 'Create Account' : 'Welcome Back'}
           </h2>
 
-          {/* Google Login */}
-          <button
-            onClick={handleGoogleLogin}
-            data-testid="google-login-btn"
-            className="w-full bg-white text-black hover:bg-gray-100 h-12 px-6 rounded-sm font-bold uppercase tracking-wider flex items-center justify-center gap-3 transition-all active:scale-95 mb-6 shadow-lg hover:shadow-neon-blue"
-          >
-            <Chrome size={20} />
-            Continue with Google
-          </button>
+          {/* Social Login Buttons */}
+          <div className="space-y-3 mb-6">
+            <button
+              onClick={handleGoogleLogin}
+              data-testid="google-login-btn"
+              className="w-full bg-white text-black hover:bg-gray-100 h-12 px-6 rounded-sm font-bold uppercase tracking-wider flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg hover:shadow-neon-blue"
+            >
+              <Chrome size={20} />
+              Continue with Google
+            </button>
+
+            <button
+              onClick={() => handleSocialLogin('Facebook')}
+              data-testid="facebook-login-btn"
+              className="w-full bg-[#1877F2] text-white hover:bg-[#166FE5] h-12 px-6 rounded-sm font-bold uppercase tracking-wider flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+              Continue with Facebook
+            </button>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => handleSocialLogin('X')}
+                data-testid="x-login-btn"
+                className="bg-black text-white hover:bg-gray-900 h-12 px-4 rounded-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg border border-white/20"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                X (Twitter)
+              </button>
+
+              <button
+                onClick={() => handleSocialLogin('Apple')}
+                data-testid="apple-login-btn"
+                className="bg-black text-white hover:bg-gray-900 h-12 px-4 rounded-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg border border-white/20"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                  <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/>
+                </svg>
+                Apple
+              </button>
+            </div>
+          </div>
 
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
