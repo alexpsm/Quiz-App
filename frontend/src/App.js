@@ -11,6 +11,7 @@ import Matchmaking from './pages/Matchmaking';
 import Profile from './pages/Profile';
 import Store from './pages/Store';
 import Admin from './pages/Admin';
+import ClubLeaderboard from './pages/ClubLeaderboard';
 import './App.css';
 
 const ProtectedRoute = ({ children }) => {
