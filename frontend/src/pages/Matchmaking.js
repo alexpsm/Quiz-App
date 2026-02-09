@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, Copy, Check } from 'lucide-react';
 import { Layout } from '../components/Layout';
+import { PoweredByScore90 } from '../components/Score90Logo';
 import { games } from '../lib/api';
 
 export default function Matchmaking() {
@@ -64,24 +65,25 @@ export default function Matchmaking() {
       <div className="p-5 space-y-6">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-extrabold tracking-tighter uppercase text-white mb-2">
+          <h1 className="text-3xl font-extrabold tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-neon-pink to-neon-yellow mb-2">
             Matchmaking
           </h1>
-          <p className="text-sm text-gray-400">Find opponents and start playing</p>
+          <PoweredByScore90 size="sm" className="justify-center" />
+          <p className="text-sm text-gray-400 mt-2">Find opponents and start playing</p>
         </div>
 
         {/* Random Match */}
-        <div className="bg-card border border-white/10 rounded-lg p-6">
+        <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-6 shadow-neon-blue">
           <div className="flex items-start gap-4 mb-4">
-            <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary flex items-center justify-center flex-shrink-0">
-              <Users className="text-primary" size={24} />
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-neon-blue to-neon-pink border-2 border-neon-blue flex items-center justify-center flex-shrink-0">
+              <Users className="text-white" size={24} />
             </div>
             <div>
               <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-1">
                 Random Opponent
               </h3>
               <p className="text-sm text-gray-400">
-                Match with a random player based on skill level
+                Match with a random player based on ball knowledge
               </p>
             </div>
           </div>
@@ -89,7 +91,7 @@ export default function Matchmaking() {
             onClick={handleRandomMatch}
             data-testid="random-match-btn"
             disabled={loading}
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all active:scale-95 disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-neon-blue to-neon-pink hover:from-neon-pink hover:to-neon-yellow h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-neon-blue hover:shadow-neon-pink transition-all active:scale-95 disabled:opacity-50 text-white"
           >
             {loading ? 'Finding...' : 'Find Match'}
           </button>
@@ -105,7 +107,7 @@ export default function Matchmaking() {
         </div>
 
         {/* Create Invite */}
-        <div className="bg-card border border-white/10 rounded-lg p-6">
+        <div className="bg-card border-2 border-neon-pink/30 rounded-lg p-6 shadow-neon-pink">
           <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-4">
             Invite a Friend
           </h3>
@@ -115,22 +117,22 @@ export default function Matchmaking() {
               onClick={handleCreateInvite}
               data-testid="create-invite-btn"
               disabled={loading}
-              className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90 h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-all active:scale-95 disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-neon-pink to-electric-purple hover:from-electric-purple hover:to-neon-pink h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-neon-pink transition-all active:scale-95 disabled:opacity-50 text-white"
             >
               {loading ? 'Generating...' : 'Generate Invite Code'}
             </button>
           ) : (
             <div className="space-y-3">
-              <div className="bg-black/50 border border-white/20 rounded-sm p-4 flex items-center justify-between">
-                <span className="text-2xl font-black tracking-tighter text-primary" data-testid="invite-code">
+              <div className="bg-black/50 border-2 border-neon-yellow rounded-sm p-4 flex items-center justify-between shadow-neon-yellow">
+                <span className="text-2xl font-black tracking-tighter text-neon-yellow" data-testid="invite-code">
                   {generatedCode}
                 </span>
                 <button
                   onClick={handleCopyCode}
                   data-testid="copy-code-btn"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-400 hover:text-neon-yellow transition-colors"
                 >
-                  {copied ? <Check className="text-accent" size={24} /> : <Copy size={24} />}
+                  {copied ? <Check className="text-neon-yellow" size={24} /> : <Copy size={24} />}
                 </button>
               </div>
               <p className="text-xs text-gray-500 text-center">
@@ -141,7 +143,7 @@ export default function Matchmaking() {
         </div>
 
         {/* Join with Code */}
-        <div className="bg-card border border-white/10 rounded-lg p-6">
+        <div className="bg-card border-2 border-neon-yellow/30 rounded-lg p-6 shadow-neon-yellow">
           <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-4">
             Join with Code
           </h3>
@@ -152,7 +154,7 @@ export default function Matchmaking() {
               data-testid="join-code-input"
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-              className="w-full bg-black/50 border border-white/20 focus:border-primary focus:ring-1 focus:ring-primary h-12 rounded-sm text-white placeholder:text-white/30 px-4 outline-none text-center text-xl font-bold tracking-wider"
+              className="w-full bg-black/50 border-2 border-neon-yellow/50 focus:border-neon-yellow focus:ring-2 focus:ring-neon-yellow/50 h-12 rounded-sm text-white placeholder:text-white/30 px-4 outline-none text-center text-xl font-bold tracking-wider"
               placeholder="Enter code"
               maxLength={8}
               required
@@ -161,7 +163,7 @@ export default function Matchmaking() {
               type="submit"
               data-testid="join-game-btn"
               disabled={loading || inviteCode.length !== 8}
-              className="w-full border-2 border-white/20 bg-transparent hover:bg-white/10 text-white h-12 px-6 rounded-sm font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+              className="w-full border-2 border-neon-yellow bg-transparent hover:bg-neon-yellow/10 text-neon-yellow h-12 px-6 rounded-sm font-bold uppercase tracking-wider transition-all disabled:opacity-50"
             >
               {loading ? 'Joining...' : 'Join Game'}
             </button>
@@ -169,7 +171,7 @@ export default function Matchmaking() {
         </div>
 
         {error && (
-          <div className="bg-destructive/10 border border-destructive/50 rounded-sm p-3 text-sm text-destructive text-center">
+          <div className="bg-destructive/10 border-2 border-destructive rounded-sm p-3 text-sm text-destructive text-center">
             {error}
           </div>
         )}

@@ -2,15 +2,16 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Coins, Zap, Crown } from 'lucide-react';
 import { Layout } from '../components/Layout';
+import { PoweredByScore90 } from '../components/Score90Logo';
 import { useAuth } from '../context/AuthContext';
 
 export default function Store() {
   const { user } = useAuth();
 
   const creditPackages = [
-    { amount: 100, price: '$0.99', icon: Coins },
-    { amount: 500, price: '$3.99', icon: Zap, popular: true },
-    { amount: 1000, price: '$6.99', icon: Crown },
+    { amount: 100, price: '$0.99', icon: Coins, gradient: 'from-neon-blue to-neon-blue/70' },
+    { amount: 500, price: '$3.99', icon: Zap, popular: true, gradient: 'from-neon-pink to-neon-pink/70' },
+    { amount: 1000, price: '$6.99', icon: Crown, gradient: 'from-neon-yellow to-neon-orange' },
   ];
 
   return (
@@ -18,16 +19,17 @@ export default function Store() {
       <div className="p-5 space-y-6">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-extrabold tracking-tighter uppercase text-white mb-2">
+          <h1 className="text-3xl font-extrabold tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-neon-pink to-neon-yellow mb-2">
             Store
           </h1>
-          <p className="text-sm text-gray-400">Get credits and remove ads</p>
+          <PoweredByScore90 size="sm" className="justify-center" />
+          <p className="text-sm text-gray-400 mt-2">Get credits and remove ads</p>
         </div>
 
         {/* Current Balance */}
-        <div className="bg-card border border-white/10 rounded-lg p-6 text-center">
+        <div className="bg-card border-2 border-neon-yellow/50 rounded-lg p-6 text-center shadow-neon-yellow">
           <p className="text-sm text-gray-400 uppercase tracking-wider mb-2">Your Balance</p>
-          <p className="text-5xl font-black tracking-tighter text-primary">{user?.credits}</p>
+          <p className="text-5xl font-black tracking-tighter text-neon-yellow">{user?.credits}</p>
           <p className="text-xs text-gray-500 mt-1">Credits</p>
         </div>
 
@@ -46,20 +48,20 @@ export default function Store() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className={`bg-card border rounded-lg p-6 relative ${
-                    pkg.popular ? 'border-primary shadow-[0_0_20px_-5px_rgba(251,191,36,0.5)]' : 'border-white/10'
+                  className={`bg-card border-2 rounded-lg p-6 relative ${
+                    pkg.popular ? 'border-neon-pink shadow-neon-pink' : 'border-white/10'
                   }`}
                 >
                   {pkg.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-black px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-neon-pink to-neon-yellow text-black px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
                       Popular
                     </div>
                   )}
                   
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary flex items-center justify-center">
-                        <Icon className="text-primary" size={24} />
+                      <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${pkg.gradient} border-2 border-white/20 flex items-center justify-center shadow-lg`}>
+                        <Icon className="text-white" size={24} />
                       </div>
                       <div>
                         <p className="text-2xl font-black tracking-tighter text-white">
@@ -69,14 +71,14 @@ export default function Store() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-black tracking-tighter text-primary">
+                      <p className="text-2xl font-black tracking-tighter text-neon-yellow">
                         {pkg.price}
                       </p>
                     </div>
                   </div>
                   
                   <button
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 rounded-sm font-bold uppercase tracking-wider transition-all active:scale-95"
+                    className={`w-full bg-gradient-to-r ${pkg.gradient} text-white hover:opacity-90 h-10 px-6 rounded-sm font-bold uppercase tracking-wider transition-all active:scale-95`}
                     data-testid={`buy-credits-${pkg.amount}`}
                   >
                     Buy Now
@@ -88,22 +90,22 @@ export default function Store() {
         </div>
 
         {/* Ad-Free Subscription */}
-        <div className="bg-gradient-to-r from-purple-900 to-indigo-900 border border-purple-500/50 rounded-lg p-6">
+        <div className="bg-gradient-to-r from-electric-purple to-neon-pink border-2 border-electric-purple/50 rounded-lg p-6 shadow-neon-pink">
           <div className="text-center mb-4">
-            <Crown className="text-yellow-400 mx-auto mb-2" size={48} />
+            <Crown className="text-neon-yellow mx-auto mb-2" size={48} />
             <h3 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-1">
               Premium
             </h3>
-            <p className="text-sm text-gray-300">Remove all ads forever</p>
+            <p className="text-sm text-gray-200">Remove all ads forever</p>
           </div>
           
           <div className="text-center mb-6">
-            <p className="text-4xl font-black tracking-tighter text-yellow-400">$4.99</p>
-            <p className="text-xs text-gray-400 mt-1">One-time purchase</p>
+            <p className="text-4xl font-black tracking-tighter text-neon-yellow">$4.99</p>
+            <p className="text-xs text-gray-300 mt-1">One-time purchase</p>
           </div>
           
           <button
-            className="w-full bg-yellow-400 text-black hover:bg-yellow-300 h-12 px-6 rounded-sm font-bold uppercase tracking-wider transition-all active:scale-95"
+            className="w-full bg-neon-yellow text-black hover:bg-neon-orange h-12 px-6 rounded-sm font-bold uppercase tracking-wider transition-all active:scale-95 shadow-neon-yellow"
             data-testid="buy-premium"
           >
             Go Premium
@@ -111,7 +113,7 @@ export default function Store() {
         </div>
 
         {/* Banner Ad Placeholder */}
-        <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-8 text-center">
+        <div className="bg-gray-900/50 border-2 border-gray-700 rounded-lg p-8 text-center backdrop-blur-sm">
           <p className="text-sm text-gray-500 uppercase tracking-wider">Ad Space</p>
           <p className="text-xs text-gray-600 mt-1">Banner advertisement</p>
         </div>
