@@ -777,9 +777,17 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
                 total_p2 = sum(r.player2_score for r in game.rounds)
                 game.winner_id = game.player1_id if total_p1 > total_p2 else game.player2_id
                 game.status = 'finished'
+                
+                # Update club knowledge score for club challenge mode
+                if game.status == 'club_challenge' or (game.player1_id == game.player2_id):
+                    current_user.club_knowledge_score = (current_user.club_knowledge_score or 0) + total_p1
             else:
                 game.current_round += 1
                 game.turn_player_id = game.player1_id
+    
+    # Special handling for club challenge single-player mode
+    if game.player1_id == game.player2_id and is_correct:
+        current_user.club_knowledge_score = (current_user.club_knowledge_score or 0) + score
     
     await db.commit()
     
