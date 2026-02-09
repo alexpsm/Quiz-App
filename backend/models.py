@@ -126,3 +126,46 @@ class LeagueMembership(Base):
     __table_args__ = (
         Index('idx_league_user', 'league_id', 'user_id'),
     )
+
+class PaymentTransaction(Base):
+    __tablename__ = 'payment_transactions'
+    
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False, index=True)
+    session_id = Column(String(255), unique=True, index=True)
+    package_id = Column(String(50), nullable=False)
+    amount = Column(Float, nullable=False)
+    currency = Column(String(10), default='usd')
+    credits_to_add = Column(Integer, default=0)
+    is_premium = Column(Boolean, default=False)
+    payment_status = Column(String(50), default='pending')
+    status = Column(String(50), default='initiated')
+    metadata = Column(JSON, default=dict)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+class ClubWar(Base):
+    __tablename__ = 'club_wars'
+    
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    week_start = Column(DateTime(timezone=True), nullable=False, index=True)
+    week_end = Column(DateTime(timezone=True), nullable=False)
+    status = Column(String(20), default='active')  # 'active' or 'completed'
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+class ClubWarContribution(Base):
+    __tablename__ = 'club_war_contributions'
+    
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    club_war_id = Column(String(36), ForeignKey('club_wars.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False, index=True)
+    club_name = Column(String(100), nullable=False, index=True)
+    points = Column(Integer, default=0)
+    games_played = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    __table_args__ = (
+        Index('idx_clubwar_user', 'club_war_id', 'user_id'),
+        Index('idx_clubwar_club', 'club_war_id', 'club_name'),
+    )
