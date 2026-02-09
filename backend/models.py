@@ -20,6 +20,8 @@ class User(Base):
     credits = Column(Integer, default=100)
     password_hash = Column(String(255))
     is_admin = Column(Boolean, default=False)
+    favorite_club = Column(String(100), index=True)
+    club_knowledge_score = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     
     sessions = relationship('UserSession', back_populates='user', cascade='all, delete-orphan')
