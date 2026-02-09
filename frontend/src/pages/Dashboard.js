@@ -1,28 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Brain, Clock, Play, Users } from 'lucide-react';
+import { Brain, Clock, Play, Users, Globe, Trophy, Shield } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { PoweredByScore90 } from '../components/Score90Logo';
-import { games } from '../lib/api';
+import { games, users } from '../lib/api';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeGames, setActiveGames] = useState([]);
+  const [ranks, setRanks] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadGames();
+    loadData();
   }, []);
 
-  const loadGames = async () => {
+  const loadData = async () => {
     try {
-      const response = await games.list();
-      setActiveGames(response.data);
+      const [gamesRes, rankRes] = await Promise.all([
+        games.list(),
+        users.myRank()
+      ]);
+      setActiveGames(gamesRes.data);
+      setRanks(rankRes.data);
     } catch (error) {
-      console.error('Failed to load games:', error);
+      console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
@@ -94,6 +99,65 @@ export default function Dashboard() {
             Invite Friend
           </motion.button>
         </div>
+
+        {/* Your Rank Section */}
+        {ranks && (
+          <div>
+            <h2 className="text-xl font-bold uppercase tracking-tight mb-3 text-white flex items-center gap-2">
+              <Trophy size={20} className="text-neon-yellow" />
+              Your Rank
+            </h2>
+            <div className="grid grid-cols-3 gap-3">
+              {/* Global Rank */}
+              <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-3 text-center" data-testid="rank-global">
+                <Globe className="text-neon-blue mx-auto mb-1" size={20} />
+                <p className="text-xl font-black tracking-tighter text-neon-blue">
+                  #{ranks.global?.rank || '-'}
+                </p>
+                <p className="text-[10px] text-gray-500 uppercase">Global</p>
+                <p className="text-[10px] text-gray-600">of {ranks.global?.total || 0}</p>
+              </div>
+
+              {/* Club Rank */}
+              <div className="bg-card border-2 border-neon-yellow/30 rounded-lg p-3 text-center" data-testid="rank-club">
+                <Shield className="text-neon-yellow mx-auto mb-1" size={20} />
+                <p className="text-xl font-black tracking-tighter text-neon-yellow">
+                  #{ranks.club?.rank || '-'}
+                </p>
+                <p className="text-[10px] text-gray-500 uppercase truncate">{ranks.club?.name || 'No Club'}</p>
+                <p className="text-[10px] text-gray-600">of {ranks.club?.total || 0}</p>
+              </div>
+
+              {/* Country Rank */}
+              <div className="bg-card border-2 border-neon-pink/30 rounded-lg p-3 text-center" data-testid="rank-country">
+                <Globe className="text-neon-pink mx-auto mb-1" size={20} />
+                <p className="text-xl font-black tracking-tighter text-neon-pink">
+                  #{ranks.country?.rank || '-'}
+                </p>
+                <p className="text-[10px] text-gray-500 uppercase truncate">{ranks.country?.name || 'No Country'}</p>
+                <p className="text-[10px] text-gray-600">of {ranks.country?.total || 0}</p>
+              </div>
+            </div>
+
+            {/* League Ranks */}
+            {ranks.leagues && ranks.leagues.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {ranks.leagues.map((lr) => (
+                  <div key={lr.league_id} className="bg-card border-2 border-electric-purple/30 rounded-lg px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Trophy className="text-electric-purple" size={16} />
+                      <span className="text-sm font-bold text-white truncate">{lr.league_name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-black tracking-tighter text-electric-purple">#{lr.rank}</span>
+                      <span className="text-xs text-gray-500">/ {lr.total}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Club Challenge Banner */}
         {user?.favorite_club && (
