@@ -81,9 +81,12 @@ class TestAvatarUpload:
         )
         
         files = {"file": ("test_avatar.png", png_1x1, "image/png")}
+        # Remove Content-Type header for multipart upload
+        headers = {k: v for k, v in auth_session.headers.items() if k.lower() != 'content-type'}
         response = auth_session.post(
             f"{BASE_URL}/api/users/avatar",
-            files=files
+            files=files,
+            headers=headers
         )
         
         assert response.status_code == 200, f"Avatar upload failed: {response.text}"
@@ -96,9 +99,11 @@ class TestAvatarUpload:
     def test_avatar_upload_rejects_non_image(self, auth_session):
         """Test that avatar upload rejects non-image files"""
         files = {"file": ("test.txt", b"This is not an image", "text/plain")}
+        headers = {k: v for k, v in auth_session.headers.items() if k.lower() != 'content-type'}
         response = auth_session.post(
             f"{BASE_URL}/api/users/avatar",
-            files=files
+            files=files,
+            headers=headers
         )
         
         assert response.status_code == 400, f"Expected 400 for non-image file, got {response.status_code}"
@@ -112,7 +117,8 @@ class TestAvatarUpload:
         )
         
         files = {"file": ("profile_avatar.png", png_1x1, "image/png")}
-        upload_resp = auth_session.post(f"{BASE_URL}/api/users/avatar", files=files)
+        headers = {k: v for k, v in auth_session.headers.items() if k.lower() != 'content-type'}
+        upload_resp = auth_session.post(f"{BASE_URL}/api/users/avatar", files=files, headers=headers)
         assert upload_resp.status_code == 200
         
         uploaded_avatar_url = upload_resp.json()["avatar"]
@@ -127,7 +133,7 @@ class TestAvatarUpload:
         
         print(f"✅ User profile avatar updated to: {uploaded_avatar_url}")
     
-    def test_avatar_upload_requires_auth(self, session):
+    def test_avatar_upload_requires_auth(self):
         """Test that avatar upload requires authentication"""
         # Use a fresh session without auth
         fresh_session = requests.Session()
