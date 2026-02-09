@@ -52,6 +52,9 @@ class UpdateProfileRequest(BaseModel):
     username: Optional[str] = None
     avatar: Optional[str] = None
     favorite_club: Optional[str] = None
+    country: Optional[str] = None
+    age: Optional[int] = None
+    phone_number: Optional[str] = None
 
 class QuestionCreate(BaseModel):
     question_text: str
@@ -276,7 +279,10 @@ async def get_me(current_user: User = Depends(get_current_user)):
         "credits": current_user.credits,
         "is_admin": current_user.is_admin,
         "favorite_club": current_user.favorite_club,
-        "club_knowledge_score": current_user.club_knowledge_score or 0
+        "club_knowledge_score": current_user.club_knowledge_score or 0,
+        "country": current_user.country,
+        "age": current_user.age,
+        "phone_number": current_user.phone_number
     }
 
 @api_router.post("/auth/logout")
@@ -306,6 +312,15 @@ async def update_profile(data: UpdateProfileRequest, current_user: User = Depend
     if data.favorite_club:
         current_user.favorite_club = data.favorite_club
     
+    if data.country is not None:
+        current_user.country = data.country
+    
+    if data.age is not None:
+        current_user.age = data.age
+    
+    if data.phone_number is not None:
+        current_user.phone_number = data.phone_number
+    
     await db.commit()
     await db.refresh(current_user)
     
@@ -318,7 +333,10 @@ async def update_profile(data: UpdateProfileRequest, current_user: User = Depend
         "skill_rank": current_user.skill_rank,
         "credits": current_user.credits,
         "favorite_club": current_user.favorite_club,
-        "club_knowledge_score": current_user.club_knowledge_score or 0
+        "club_knowledge_score": current_user.club_knowledge_score or 0,
+        "country": current_user.country,
+        "age": current_user.age,
+        "phone_number": current_user.phone_number
     }
 
 @api_router.get("/clubs")
