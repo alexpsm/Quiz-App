@@ -30,10 +30,10 @@ export default function Dashboard() {
 
   const handleQuickPlay = async () => {
     try {
-      const response = await games.matchmake();
+      const response = await games.quickPlay();
       navigate(`/game/${response.data.game_id}`);
     } catch (error) {
-      console.error('Matchmaking failed:', error);
+      console.error('Quick play failed:', error);
     }
   };
 
