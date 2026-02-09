@@ -54,7 +54,14 @@ export default function Game() {
       } else if (!response.data.is_my_turn) {
         setGamePhase('waiting');
       } else {
-        setGamePhase('category_selection');
+        // Check if current round exists and has questions
+        const currentRound = response.data.rounds?.find(r => r.round_number === response.data.current_round);
+        if (currentRound && currentRound.category_selected) {
+          // Round has already started, check if we need to continue answering
+          setGamePhase('waiting'); // Player 1 finished, waiting for player 2
+        } else {
+          setGamePhase('category_selection');
+        }
       }
     } catch (error) {
       console.error('Failed to load game:', error);
