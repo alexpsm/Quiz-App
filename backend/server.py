@@ -345,6 +345,43 @@ async def get_leaderboard(limit: int = 50, db: AsyncSession = Depends(get_db)):
         "skill_rank": user.skill_rank
     } for user in users]
 
+@api_router.get("/users/club-leaderboard")
+async def get_club_leaderboard(club: Optional[str] = None, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Get leaderboard for a specific club based on ball knowledge score"""
+    target_club = club or current_user.favorite_club
+    
+    if not target_club:
+        raise HTTPException(status_code=400, detail="No club specified")
+    
+    result = await db.execute(
+        select(User).where(
+            User.favorite_club == target_club,
+            User.username.isnot(None)
+        ).order_by(User.club_knowledge_score.desc()).limit(100)
+    )
+    users = result.scalars().all()
+    
+    # Find current user's rank
+    user_rank = None
+    for idx, user in enumerate(users):
+        if user.user_id == current_user.user_id:
+            user_rank = idx + 1
+            break
+    
+    return {
+        "club": target_club,
+        "total_fans": len(users),
+        "user_rank": user_rank,
+        "leaderboard": [{
+            "rank": idx + 1,
+            "user_id": user.user_id,
+            "username": user.username,
+            "avatar": user.avatar,
+            "club_knowledge_score": user.club_knowledge_score or 0,
+            "is_current_user": user.user_id == current_user.user_id
+        } for idx, user in enumerate(users)]
+    }
+
 @api_router.get("/users/search")
 async def search_users(q: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
