@@ -98,3 +98,31 @@ class GameRound(Base):
     __table_args__ = (
         Index('idx_game_round', 'game_id', 'round_number'),
     )
+
+
+class League(Base):
+    __tablename__ = 'leagues'
+    
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    league_type = Column(String(20), nullable=False, index=True)  # 'public' or 'private'
+    invite_code = Column(String(20), unique=True, index=True)
+    created_by = Column(String(36), ForeignKey('users.user_id'))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    
+    memberships = relationship('LeagueMembership', back_populates='league', cascade='all, delete-orphan')
+
+class LeagueMembership(Base):
+    __tablename__ = 'league_memberships'
+    
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    league_id = Column(String(36), ForeignKey('leagues.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False, index=True)
+    joined_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    
+    league = relationship('League', back_populates='memberships')
+    user = relationship('User', back_populates='league_memberships')
+    
+    __table_args__ = (
+        Index('idx_league_user', 'league_id', 'user_id'),
+    )
