@@ -21,9 +21,6 @@ class QuizBallAPITester:
         
         if headers:
             test_headers.update(headers)
-        
-        if self.session_token:
-            test_headers['Authorization'] = f'Bearer {self.session_token}'
 
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
@@ -31,11 +28,11 @@ class QuizBallAPITester:
         
         try:
             if method == 'GET':
-                response = requests.get(url, headers=test_headers, timeout=30)
+                response = self.session.get(url, headers=test_headers, timeout=30)
             elif method == 'POST':
-                response = requests.post(url, json=data, headers=test_headers, timeout=30)
+                response = self.session.post(url, json=data, headers=test_headers, timeout=30)
             elif method == 'PUT':
-                response = requests.put(url, json=data, headers=test_headers, timeout=30)
+                response = self.session.put(url, json=data, headers=test_headers, timeout=30)
 
             success = response.status_code == expected_status
             if success:
