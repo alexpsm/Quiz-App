@@ -86,6 +86,12 @@ const AppRouter = () => {
         </ProtectedRoute>
       } />
       
+      <Route path="/club-leaderboard" element={
+        <ProtectedRoute>
+          <ClubLeaderboard />
+        </ProtectedRoute>
+      } />
+      
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
