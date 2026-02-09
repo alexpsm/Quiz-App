@@ -479,6 +479,81 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
     return categories
 
 # Game Endpoints
+BOT_USERNAME = "TheScore90Bot"
+
+async def get_or_create_bot(db: AsyncSession) -> User:
+    """Get or create the TheScore90Bot user"""
+    result = await db.execute(select(User).where(User.username == BOT_USERNAME))
+    bot = result.scalar_one_or_none()
+    if not bot:
+        bot = User(
+            user_id=str(uuid.uuid4()),
+            email="bot@score90.com",
+            name="Score90 Bot",
+            username=BOT_USERNAME,
+            avatar="https://api.dicebear.com/7.x/bottts/svg?seed=Score90Bot",
+            skill_rank=1000,
+            is_admin=False,
+        )
+        db.add(bot)
+        await db.commit()
+        await db.refresh(bot)
+    return bot
+
+@api_router.post("/games/quick-play")
+async def quick_play(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Start a quick play game against TheScore90Bot"""
+    bot = await get_or_create_bot(db)
+    # Match bot rank to user's rank
+    bot.skill_rank = current_user.skill_rank
+    
+    game = Game(
+        id=str(uuid.uuid4()),
+        player1_id=current_user.user_id,
+        player2_id=bot.user_id,
+        current_round=1,
+        status='active',
+        turn_player_id=current_user.user_id
+    )
+    db.add(game)
+    await db.commit()
+    await db.refresh(game)
+    
+    return {"game_id": game.id, "opponent": BOT_USERNAME}
+
+@api_router.get("/games/history")
+async def get_game_history(current_user: User = Depends(get_current_user), limit: int = 20, db: AsyncSession = Depends(get_db)):
+    """Get user's completed game history"""
+    result = await db.execute(
+        select(Game).options(
+            selectinload(Game.player1),
+            selectinload(Game.player2),
+            selectinload(Game.rounds)
+        ).where(
+            or_(Game.player1_id == current_user.user_id, Game.player2_id == current_user.user_id),
+            Game.status == 'finished'
+        ).order_by(Game.updated_at.desc()).limit(limit)
+    )
+    finished_games = result.scalars().all()
+    
+    history = []
+    for game in finished_games:
+        my_score = sum(r.player1_score if game.player1_id == current_user.user_id else r.player2_score for r in game.rounds)
+        opponent_score = sum(r.player2_score if game.player1_id == current_user.user_id else r.player1_score for r in game.rounds)
+        opponent = game.player2 if game.player1_id == current_user.user_id else game.player1
+        
+        history.append({
+            "id": game.id,
+            "opponent_username": opponent.username,
+            "opponent_avatar": opponent.avatar,
+            "my_score": my_score,
+            "opponent_score": opponent_score,
+            "won": game.winner_id == current_user.user_id,
+            "date": game.updated_at.isoformat() if game.updated_at else None
+        })
+    
+    return history
+
 @api_router.post("/games/matchmake")
 async def matchmake(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     # Find an opponent (simple random for MVP)
