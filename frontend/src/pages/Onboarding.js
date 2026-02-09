@@ -110,6 +110,32 @@ export default function Onboarding() {
               <p className="text-xs text-gray-500 mt-2">3-20 characters, lowercase letters, numbers, and underscores only</p>
             </div>
 
+            {/* Favorite Club Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
+                Choose Your Club
+              </label>
+              <select
+                data-testid="club-select"
+                value={favoriteClub}
+                onChange={(e) => setFavoriteClub(e.target.value)}
+                className="w-full bg-black/50 border border-white/20 focus:border-primary focus:ring-1 focus:ring-primary h-12 rounded-sm text-white px-4 outline-none"
+                required
+              >
+                <option value="">Select your favorite club...</option>
+                {Object.entries(clubsByLeague).map(([league, clubs]) => (
+                  <optgroup key={league} label={league}>
+                    {clubs.map((club) => (
+                      <option key={club} value={club}>
+                        {club}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-2">This will unlock exclusive Club Challenge mode and club-specific leaderboards</p>
+            </div>
+
             {error && (
               <div className="bg-destructive/10 border border-destructive/50 rounded-sm p-3 text-sm text-destructive">
                 {error}
