@@ -1,72 +1,717 @@
-from fastapi import FastAPI, APIRouter
-from dotenv import load_dotenv
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, Response, Cookie, Header
+from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func, or_
+from sqlalchemy.orm import selectinload
+from database import get_db
+from models import User, UserSession, Question, Game, GameRound
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional, List, Dict, Any
+from datetime import datetime, timezone, timedelta
 import os
 import logging
-from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
 import uuid
-from datetime import datetime, timezone
+import bcrypt
+import jwt
+import random
+import string
+import requests
 
-
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
-
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
-
-# Create the main app without a prefix
 app = FastAPI()
-
-# Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
+JWT_SECRET = os.environ.get('JWT_SECRET', 'default_secret_key')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin')
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Pydantic Models
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
+    user_id: str
+    email: str
+    name: str
+    username: Optional[str] = None
+    picture: Optional[str] = None
+    avatar: Optional[str] = None
+    skill_rank: int = 1000
+    credits: int = 100
+
+class UpdateProfileRequest(BaseModel):
+    username: Optional[str] = None
+    avatar: Optional[str] = None
+
+class QuestionCreate(BaseModel):
+    question_text: str
+    option_a: str
+    option_b: str
+    option_c: str
+    option_d: str
+    correct_option: str
+    category: str
+    difficulty: int = 1
+
+class QuestionResponse(BaseModel):
+    id: str
+    question_text: str
+    option_a: str
+    option_b: str
+    option_c: str
+    option_d: str
+    correct_option: str
+    category: str
+    difficulty: int
+
+class AnswerSubmit(BaseModel):
+    question_id: str
+    selected_option: str
+    time_taken: float
+
+class GameResponse(BaseModel):
+    id: str
+    player1: UserResponse
+    player2: UserResponse
+    current_round: int
+    status: str
+    turn_player_id: Optional[str]
+    winner_id: Optional[str]
+    invite_code: Optional[str]
+    my_score: int
+    opponent_score: int
+
+# Helper Functions
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
+def create_jwt_token(user_id: str) -> str:
+    payload = {
+        'user_id': user_id,
+        'exp': datetime.now(timezone.utc) + timedelta(days=7)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
+
+def generate_invite_code() -> str:
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+
+async def get_current_user(db: AsyncSession = Depends(get_db), session_token: Optional[str] = Cookie(None), authorization: Optional[str] = Header(None)) -> User:
+    token = session_token
+    if not token and authorization and authorization.startswith('Bearer '):
+        token = authorization.replace('Bearer ', '')
     
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
+    result = await db.execute(
+        select(UserSession).options(selectinload(UserSession.user)).where(UserSession.session_token == token)
+    )
+    session = result.scalar_one_or_none()
     
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
+    if not session:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    
+    expires_at = session.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    if expires_at < datetime.now(timezone.utc):
+        await db.delete(session)
+        await db.commit()
+        raise HTTPException(status_code=401, detail="Session expired")
+    
+    return session.user
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
+# Auth Endpoints
+@api_router.post("/auth/register")
+async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.email == data.email))
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
+    user = User(
+        user_id=str(uuid.uuid4()),
+        email=data.email,
+        name=data.name,
+        password_hash=hash_password(data.password),
+        avatar=f"https://api.dicebear.com/7.x/avataaars/svg?seed={uuid.uuid4()}"
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
     
-    return status_checks
+    session_token = str(uuid.uuid4())
+    session = UserSession(
+        user_id=user.user_id,
+        session_token=session_token,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7)
+    )
+    db.add(session)
+    await db.commit()
+    
+    response = JSONResponse(content={"message": "User registered successfully"})
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=7*24*60*60,
+        path="/"
+    )
+    return response
 
-# Include the router in the main app
+@api_router.post("/auth/login")
+async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.email == data.email))
+    user = result.scalar_one_or_none()
+    
+    if not user or not user.password_hash or not verify_password(data.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    session_token = str(uuid.uuid4())
+    session = UserSession(
+        user_id=user.user_id,
+        session_token=session_token,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7)
+    )
+    db.add(session)
+    await db.commit()
+    
+    response = JSONResponse(content={"message": "Login successful"})
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=7*24*60*60,
+        path="/"
+    )
+    return response
+
+@api_router.get("/auth/session")
+async def process_session(session_id: str, db: AsyncSession = Depends(get_db)):
+    """Process Emergent Auth session_id and create/update user"""
+    try:
+        # REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+        response = requests.get(
+            'https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data',
+            headers={'X-Session-ID': session_id},
+            timeout=10
+        )
+        response.raise_for_status()
+        data = response.json()
+        
+        result = await db.execute(select(User).where(User.email == data['email']))
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            user = User(
+                user_id=str(uuid.uuid4()),
+                email=data['email'],
+                name=data['name'],
+                picture=data.get('picture'),
+                avatar=data.get('picture') or f"https://api.dicebear.com/7.x/avataaars/svg?seed={uuid.uuid4()}"
+            )
+            db.add(user)
+        else:
+            user.name = data['name']
+            user.picture = data.get('picture')
+            if not user.avatar:
+                user.avatar = data.get('picture')
+        
+        await db.commit()
+        await db.refresh(user)
+        
+        session_token = data['session_token']
+        session = UserSession(
+            user_id=user.user_id,
+            session_token=session_token,
+            expires_at=datetime.now(timezone.utc) + timedelta(days=7)
+        )
+        db.add(session)
+        await db.commit()
+        
+        return {
+            "session_token": session_token,
+            "user": {
+                "user_id": user.user_id,
+                "email": user.email,
+                "name": user.name,
+                "username": user.username,
+                "avatar": user.avatar,
+                "picture": user.picture,
+                "skill_rank": user.skill_rank,
+                "credits": user.credits
+            }
+        }
+    except Exception as e:
+        logger.error(f"Session processing error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.get("/auth/me")
+async def get_me(current_user: User = Depends(get_current_user)):
+    return {
+        "user_id": current_user.user_id,
+        "email": current_user.email,
+        "name": current_user.name,
+        "username": current_user.username,
+        "avatar": current_user.avatar,
+        "picture": current_user.picture,
+        "skill_rank": current_user.skill_rank,
+        "credits": current_user.credits,
+        "is_admin": current_user.is_admin
+    }
+
+@api_router.post("/auth/logout")
+async def logout(response: Response, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db), session_token: Optional[str] = Cookie(None)):
+    if session_token:
+        result = await db.execute(select(UserSession).where(UserSession.session_token == session_token))
+        session = result.scalar_one_or_none()
+        if session:
+            await db.delete(session)
+            await db.commit()
+    
+    response.delete_cookie(key="session_token", path="/")
+    return {"message": "Logged out successfully"}
+
+# User Endpoints
+@api_router.put("/users/me")
+async def update_profile(data: UpdateProfileRequest, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if data.username:
+        result = await db.execute(select(User).where(User.username == data.username, User.user_id != current_user.user_id))
+        if result.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Username already taken")
+        current_user.username = data.username
+    
+    if data.avatar:
+        current_user.avatar = data.avatar
+    
+    await db.commit()
+    await db.refresh(current_user)
+    
+    return {
+        "user_id": current_user.user_id,
+        "email": current_user.email,
+        "name": current_user.name,
+        "username": current_user.username,
+        "avatar": current_user.avatar,
+        "skill_rank": current_user.skill_rank,
+        "credits": current_user.credits
+    }
+
+@api_router.get("/users/leaderboard")
+async def get_leaderboard(limit: int = 50, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(User).where(User.username.isnot(None)).order_by(User.skill_rank.desc()).limit(limit)
+    )
+    users = result.scalars().all()
+    
+    return [{
+        "user_id": user.user_id,
+        "username": user.username,
+        "avatar": user.avatar,
+        "skill_rank": user.skill_rank
+    } for user in users]
+
+@api_router.get("/users/search")
+async def search_users(q: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(User).where(
+            User.username.ilike(f"%{q}%"),
+            User.user_id != current_user.user_id
+        ).limit(10)
+    )
+    users = result.scalars().all()
+    
+    return [{
+        "user_id": user.user_id,
+        "username": user.username,
+        "avatar": user.avatar,
+        "skill_rank": user.skill_rank
+    } for user in users]
+
+# Question Endpoints (Admin)
+@api_router.post("/questions")
+async def create_question(data: QuestionCreate, password: str, db: AsyncSession = Depends(get_db)):
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=403, detail="Invalid admin password")
+    
+    question = Question(
+        id=str(uuid.uuid4()),
+        question_text=data.question_text,
+        option_a=data.option_a,
+        option_b=data.option_b,
+        option_c=data.option_c,
+        option_d=data.option_d,
+        correct_option=data.correct_option,
+        category=data.category,
+        difficulty=data.difficulty
+    )
+    db.add(question)
+    await db.commit()
+    await db.refresh(question)
+    
+    return {
+        "id": question.id,
+        "question_text": question.question_text,
+        "option_a": question.option_a,
+        "option_b": question.option_b,
+        "option_c": question.option_c,
+        "option_d": question.option_d,
+        "correct_option": question.correct_option,
+        "category": question.category,
+        "difficulty": question.difficulty
+    }
+
+@api_router.get("/questions")
+async def list_questions(category: Optional[str] = None, limit: int = 100, offset: int = 0, db: AsyncSession = Depends(get_db)):
+    query = select(Question)
+    if category:
+        query = query.where(Question.category == category)
+    query = query.offset(offset).limit(limit)
+    
+    result = await db.execute(query)
+    questions = result.scalars().all()
+    
+    return [{
+        "id": q.id,
+        "question_text": q.question_text,
+        "option_a": q.option_a,
+        "option_b": q.option_b,
+        "option_c": q.option_c,
+        "option_d": q.option_d,
+        "correct_option": q.correct_option,
+        "category": q.category,
+        "difficulty": q.difficulty
+    } for q in questions]
+
+@api_router.get("/questions/categories")
+async def get_categories(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Question.category).distinct())
+    categories = [row[0] for row in result.all()]
+    return categories
+
+# Game Endpoints
+@api_router.post("/games/matchmake")
+async def matchmake(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    # Find an opponent (simple random for MVP)
+    result = await db.execute(
+        select(User).where(User.user_id != current_user.user_id).order_by(func.random()).limit(1)
+    )
+    opponent = result.scalar_one_or_none()
+    
+    if not opponent:
+        raise HTTPException(status_code=404, detail="No opponents available")
+    
+    game = Game(
+        id=str(uuid.uuid4()),
+        player1_id=current_user.user_id,
+        player2_id=opponent.user_id,
+        current_round=1,
+        status='active',
+        turn_player_id=current_user.user_id
+    )
+    db.add(game)
+    await db.commit()
+    await db.refresh(game)
+    
+    return {"game_id": game.id}
+
+@api_router.post("/games/invite")
+async def create_invite(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    invite_code = generate_invite_code()
+    
+    # Create game with placeholder for player2
+    game = Game(
+        id=str(uuid.uuid4()),
+        player1_id=current_user.user_id,
+        player2_id=current_user.user_id,  # Temporary, will be updated when someone joins
+        current_round=0,  # Game hasn't started yet
+        status='pending',
+        invite_code=invite_code
+    )
+    db.add(game)
+    await db.commit()
+    
+    return {"invite_code": invite_code, "game_id": game.id}
+
+@api_router.post("/games/join/{invite_code}")
+async def join_game(invite_code: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Game).where(Game.invite_code == invite_code))
+    game = result.scalar_one_or_none()
+    
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    if game.status != 'pending':
+        raise HTTPException(status_code=400, detail="Game already started")
+    
+    if game.player1_id == current_user.user_id:
+        raise HTTPException(status_code=400, detail="Cannot join your own game")
+    
+    game.player2_id = current_user.user_id
+    game.current_round = 1
+    game.status = 'active'
+    game.turn_player_id = game.player1_id
+    
+    await db.commit()
+    
+    return {"game_id": game.id}
+
+@api_router.get("/games")
+async def list_games(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Game).options(
+            selectinload(Game.player1),
+            selectinload(Game.player2),
+            selectinload(Game.rounds)
+        ).where(
+            or_(Game.player1_id == current_user.user_id, Game.player2_id == current_user.user_id),
+            Game.status.in_(['active', 'pending'])
+        ).order_by(Game.updated_at.desc())
+    )
+    games = result.scalars().all()
+    
+    game_list = []
+    for game in games:
+        my_score = sum(r.player1_score if game.player1_id == current_user.user_id else r.player2_score for r in game.rounds)
+        opponent_score = sum(r.player2_score if game.player1_id == current_user.user_id else r.player1_score for r in game.rounds)
+        
+        game_list.append({
+            "id": game.id,
+            "player1": {
+                "user_id": game.player1.user_id,
+                "username": game.player1.username,
+                "avatar": game.player1.avatar,
+                "skill_rank": game.player1.skill_rank
+            },
+            "player2": {
+                "user_id": game.player2.user_id,
+                "username": game.player2.username,
+                "avatar": game.player2.avatar,
+                "skill_rank": game.player2.skill_rank
+            } if game.player2_id != game.player1_id else None,
+            "current_round": game.current_round,
+            "status": game.status,
+            "turn_player_id": game.turn_player_id,
+            "is_my_turn": game.turn_player_id == current_user.user_id,
+            "my_score": my_score,
+            "opponent_score": opponent_score,
+            "invite_code": game.invite_code
+        })
+    
+    return game_list
+
+@api_router.get("/games/{game_id}")
+async def get_game(game_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Game).options(
+            selectinload(Game.player1),
+            selectinload(Game.player2),
+            selectinload(Game.rounds)
+        ).where(Game.id == game_id)
+    )
+    game = result.scalar_one_or_none()
+    
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    if game.player1_id != current_user.user_id and game.player2_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    my_score = sum(r.player1_score if game.player1_id == current_user.user_id else r.player2_score for r in game.rounds)
+    opponent_score = sum(r.player2_score if game.player1_id == current_user.user_id else r.player1_score for r in game.rounds)
+    
+    return {
+        "id": game.id,
+        "player1": {
+            "user_id": game.player1.user_id,
+            "username": game.player1.username,
+            "avatar": game.player1.avatar,
+            "skill_rank": game.player1.skill_rank
+        },
+        "player2": {
+            "user_id": game.player2.user_id,
+            "username": game.player2.username,
+            "avatar": game.player2.avatar,
+            "skill_rank": game.player2.skill_rank
+        },
+        "current_round": game.current_round,
+        "status": game.status,
+        "turn_player_id": game.turn_player_id,
+        "is_my_turn": game.turn_player_id == current_user.user_id,
+        "winner_id": game.winner_id,
+        "my_score": my_score,
+        "opponent_score": opponent_score,
+        "rounds": [{
+            "round_number": r.round_number,
+            "category_selected": r.category_selected,
+            "player1_score": r.player1_score,
+            "player2_score": r.player2_score
+        } for r in sorted(game.rounds, key=lambda x: x.round_number)]
+    }
+
+@api_router.post("/games/{game_id}/select-category")
+async def select_category(game_id: str, category: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Game).options(selectinload(Game.rounds)).where(Game.id == game_id)
+    )
+    game = result.scalar_one_or_none()
+    
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    if game.turn_player_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Not your turn")
+    
+    # Get 3 random questions from the selected category
+    q_result = await db.execute(
+        select(Question).where(Question.category == category).order_by(func.random()).limit(3)
+    )
+    questions = q_result.scalars().all()
+    
+    if len(questions) < 3:
+        raise HTTPException(status_code=400, detail="Not enough questions in this category")
+    
+    # Create or update round
+    round_result = await db.execute(
+        select(GameRound).where(
+            GameRound.game_id == game_id,
+            GameRound.round_number == game.current_round
+        )
+    )
+    game_round = round_result.scalar_one_or_none()
+    
+    if not game_round:
+        game_round = GameRound(
+            id=str(uuid.uuid4()),
+            game_id=game_id,
+            round_number=game.current_round,
+            category_selected=category,
+            questions=[q.id for q in questions],
+            player1_answers=[],
+            player2_answers=[]
+        )
+        db.add(game_round)
+    else:
+        game_round.category_selected = category
+        game_round.questions = [q.id for q in questions]
+    
+    await db.commit()
+    
+    return {
+        "questions": [{
+            "id": q.id,
+            "question_text": q.question_text,
+            "option_a": q.option_a,
+            "option_b": q.option_b,
+            "option_c": q.option_c,
+            "option_d": q.option_d
+        } for q in questions]
+    }
+
+@api_router.post("/games/{game_id}/answer")
+async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Game).options(selectinload(Game.rounds)).where(Game.id == game_id)
+    )
+    game = result.scalar_one_or_none()
+    
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    if game.turn_player_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Not your turn")
+    
+    # Get current round
+    round_result = await db.execute(
+        select(GameRound).where(
+            GameRound.game_id == game_id,
+            GameRound.round_number == game.current_round
+        )
+    )
+    game_round = round_result.scalar_one_or_none()
+    
+    if not game_round:
+        raise HTTPException(status_code=404, detail="Round not found")
+    
+    # Get question
+    q_result = await db.execute(select(Question).where(Question.id == data.question_id))
+    question = q_result.scalar_one_or_none()
+    
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+    
+    # Calculate score (correct answer + speed bonus)
+    is_correct = data.selected_option == question.correct_option
+    score = 0
+    if is_correct:
+        base_score = 100
+        # Speed bonus: max 50 points if answered in 1 second, decreasing linearly
+        time_bonus = max(0, int(50 * (1 - min(data.time_taken / 15, 1))))
+        score = base_score + time_bonus
+    
+    # Update round
+    is_player1 = game.player1_id == current_user.user_id
+    
+    if is_player1:
+        game_round.player1_answers.append({
+            "question_id": data.question_id,
+            "selected_option": data.selected_option,
+            "is_correct": is_correct,
+            "time_taken": data.time_taken,
+            "score": score
+        })
+        game_round.player1_score += score
+        
+        # Check if player1 completed all 3 questions
+        if len(game_round.player1_answers) >= 3:
+            # Switch turn to player2
+            game.turn_player_id = game.player2_id
+    else:
+        game_round.player2_answers.append({
+            "question_id": data.question_id,
+            "selected_option": data.selected_option,
+            "is_correct": is_correct,
+            "time_taken": data.time_taken,
+            "score": score
+        })
+        game_round.player2_score += score
+        
+        # Check if player2 completed all 3 questions
+        if len(game_round.player2_answers) >= 3:
+            # Round complete, move to next round
+            if game.current_round >= 6:
+                # Game finished
+                total_p1 = sum(r.player1_score for r in game.rounds)
+                total_p2 = sum(r.player2_score for r in game.rounds)
+                game.winner_id = game.player1_id if total_p1 > total_p2 else game.player2_id
+                game.status = 'finished'
+            else:
+                game.current_round += 1
+                game.turn_player_id = game.player1_id
+    
+    await db.commit()
+    
+    return {
+        "is_correct": is_correct,
+        "score": score,
+        "correct_option": question.correct_option if is_correct else None
+    }
+
 app.include_router(api_router)
 
 app.add_middleware(
@@ -76,14 +721,3 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
