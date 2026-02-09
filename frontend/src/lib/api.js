@@ -38,6 +38,7 @@ export const questions = {
 
 export const games = {
   matchmake: () => api.post('/games/matchmake'),
+  clubChallenge: () => api.post('/games/club-challenge'),
   createInvite: () => api.post('/games/invite'),
   joinGame: (inviteCode) => api.post(`/games/join/${inviteCode}`),
   list: () => api.get('/games'),
