@@ -38,10 +38,12 @@ export const questions = {
 
 export const games = {
   matchmake: () => api.post('/games/matchmake'),
+  quickPlay: () => api.post('/games/quick-play'),
   clubChallenge: () => api.post('/games/club-challenge'),
   createInvite: () => api.post('/games/invite'),
   joinGame: (inviteCode) => api.post(`/games/join/${inviteCode}`),
   list: () => api.get('/games'),
+  history: (limit = 20) => api.get(`/games/history?limit=${limit}`),
   get: (gameId) => api.get(`/games/${gameId}`),
   selectCategory: (gameId, category) => api.post(`/games/${gameId}/select-category`, null, { params: { category } }),
   submitAnswer: (gameId, data) => api.post(`/games/${gameId}/answer`, data),
