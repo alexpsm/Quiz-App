@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Brain, Clock, Play, Users, Globe, Trophy, Shield } from 'lucide-react';
+import { Brain, Clock, Play, Users, Globe, Trophy, Shield, Swords } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { PoweredByScore90 } from '../components/Score90Logo';
 import { games, users } from '../lib/api';
+import api from '../lib/api';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeGames, setActiveGames] = useState([]);
   const [ranks, setRanks] = useState(null);
+  const [clubWar, setClubWar] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,12 +22,14 @@ export default function Dashboard() {
 
   const loadData = async () => {
     try {
-      const [gamesRes, rankRes] = await Promise.all([
+      const [gamesRes, rankRes, warRes] = await Promise.all([
         games.list(),
-        users.myRank()
+        users.myRank(),
+        api.get('/club-wars/current').catch(() => ({ data: null }))
       ]);
       setActiveGames(gamesRes.data);
       setRanks(rankRes.data);
+      setClubWar(warRes.data);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
