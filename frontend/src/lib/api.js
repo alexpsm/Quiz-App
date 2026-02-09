@@ -21,7 +21,13 @@ export const auth = {
 export const users = {
   updateProfile: (data) => api.put('/users/me', data),
   leaderboard: (limit = 50) => api.get(`/users/leaderboard?limit=${limit}`),
+  clubLeaderboard: (club) => api.get(`/users/club-leaderboard${club ? `?club=${encodeURIComponent(club)}` : ''}`),
   search: (query) => api.get(`/users/search?q=${query}`),
+};
+
+export const clubs = {
+  getAll: () => api.get('/clubs'),
+  getList: () => api.get('/clubs/list'),
 };
 
 export const questions = {
