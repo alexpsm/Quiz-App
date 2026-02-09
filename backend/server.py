@@ -423,6 +423,314 @@ async def search_users(q: str, current_user: User = Depends(get_current_user), d
         "skill_rank": user.skill_rank
     } for user in users]
 
+# Avatar Upload
+@api_router.post("/users/avatar")
+async def upload_avatar(file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Upload a custom avatar image"""
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    # Limit to 5MB
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image must be under 5MB")
+    
+    ext = file.filename.split(".")[-1] if file.filename and "." in file.filename else "png"
+    filename = f"{current_user.user_id}_{uuid.uuid4().hex[:8]}.{ext}"
+    filepath = UPLOAD_DIR / filename
+    
+    with open(filepath, "wb") as f:
+        f.write(contents)
+    
+    avatar_url = f"/api/uploads/{filename}"
+    current_user.avatar = avatar_url
+    await db.commit()
+    
+    return {"avatar": avatar_url}
+
+# Your Rank Endpoint
+@api_router.get("/users/my-rank")
+async def get_my_rank(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Get user's rank across club, country, and global"""
+    ranks = {}
+    
+    # Global rank
+    global_result = await db.execute(
+        select(func.count()).select_from(User).where(
+            User.username.isnot(None),
+            User.skill_rank > current_user.skill_rank
+        )
+    )
+    global_above = global_result.scalar() or 0
+    global_total_result = await db.execute(
+        select(func.count()).select_from(User).where(User.username.isnot(None))
+    )
+    global_total = global_total_result.scalar() or 1
+    ranks["global"] = {"rank": global_above + 1, "total": global_total}
+    
+    # Club rank
+    if current_user.favorite_club:
+        club_result = await db.execute(
+            select(func.count()).select_from(User).where(
+                User.favorite_club == current_user.favorite_club,
+                User.username.isnot(None),
+                User.skill_rank > current_user.skill_rank
+            )
+        )
+        club_above = club_result.scalar() or 0
+        club_total_result = await db.execute(
+            select(func.count()).select_from(User).where(
+                User.favorite_club == current_user.favorite_club,
+                User.username.isnot(None)
+            )
+        )
+        club_total = club_total_result.scalar() or 1
+        ranks["club"] = {"rank": club_above + 1, "total": club_total, "name": current_user.favorite_club}
+    
+    # Country rank
+    if current_user.country:
+        country_result = await db.execute(
+            select(func.count()).select_from(User).where(
+                User.country == current_user.country,
+                User.username.isnot(None),
+                User.skill_rank > current_user.skill_rank
+            )
+        )
+        country_above = country_result.scalar() or 0
+        country_total_result = await db.execute(
+            select(func.count()).select_from(User).where(
+                User.country == current_user.country,
+                User.username.isnot(None)
+            )
+        )
+        country_total = country_total_result.scalar() or 1
+        ranks["country"] = {"rank": country_above + 1, "total": country_total, "name": current_user.country}
+    
+    # League ranks
+    league_ranks = []
+    memberships_result = await db.execute(
+        select(LeagueMembership).options(selectinload(LeagueMembership.league)).where(
+            LeagueMembership.user_id == current_user.user_id
+        )
+    )
+    memberships = memberships_result.scalars().all()
+    
+    for membership in memberships:
+        league = membership.league
+        # Count members with higher skill_rank in this league
+        league_rank_result = await db.execute(
+            select(func.count()).select_from(LeagueMembership).join(User).where(
+                LeagueMembership.league_id == league.id,
+                User.skill_rank > current_user.skill_rank
+            )
+        )
+        league_above = league_rank_result.scalar() or 0
+        league_member_count_result = await db.execute(
+            select(func.count()).select_from(LeagueMembership).where(
+                LeagueMembership.league_id == league.id
+            )
+        )
+        league_member_count = league_member_count_result.scalar() or 1
+        league_ranks.append({
+            "league_id": league.id,
+            "league_name": league.name,
+            "rank": league_above + 1,
+            "total": league_member_count
+        })
+    
+    ranks["leagues"] = league_ranks
+    
+    return ranks
+
+# League Endpoints
+class CreateLeagueRequest(BaseModel):
+    name: str
+    league_type: str = "public"  # "public" or "private"
+
+@api_router.post("/leagues")
+async def create_league(data: CreateLeagueRequest, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Create a new league"""
+    invite_code = generate_invite_code()
+    
+    league = League(
+        id=str(uuid.uuid4()),
+        name=data.name,
+        league_type=data.league_type,
+        invite_code=invite_code,
+        created_by=current_user.user_id
+    )
+    db.add(league)
+    
+    # Auto-join creator
+    membership = LeagueMembership(
+        id=str(uuid.uuid4()),
+        league_id=league.id,
+        user_id=current_user.user_id
+    )
+    db.add(membership)
+    await db.commit()
+    await db.refresh(league)
+    
+    return {
+        "id": league.id,
+        "name": league.name,
+        "league_type": league.league_type,
+        "invite_code": league.invite_code,
+        "member_count": 1
+    }
+
+@api_router.get("/leagues")
+async def list_leagues(league_type: Optional[str] = None, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """List leagues (public or user's private leagues)"""
+    query = select(League).options(selectinload(League.memberships))
+    
+    if league_type == "public":
+        query = query.where(League.league_type == "public")
+    elif league_type == "private":
+        # Only show private leagues the user belongs to
+        query = query.join(LeagueMembership).where(
+            League.league_type == "private",
+            LeagueMembership.user_id == current_user.user_id
+        )
+    else:
+        # Show all public + user's private
+        query = query.where(
+            or_(
+                League.league_type == "public",
+                League.id.in_(
+                    select(LeagueMembership.league_id).where(
+                        LeagueMembership.user_id == current_user.user_id
+                    )
+                )
+            )
+        )
+    
+    result = await db.execute(query.order_by(League.created_at.desc()).limit(50))
+    leagues = result.scalars().unique().all()
+    
+    # Check which leagues the user is a member of
+    user_memberships_result = await db.execute(
+        select(LeagueMembership.league_id).where(LeagueMembership.user_id == current_user.user_id)
+    )
+    user_league_ids = {row[0] for row in user_memberships_result.all()}
+    
+    return [{
+        "id": league.id,
+        "name": league.name,
+        "league_type": league.league_type,
+        "invite_code": league.invite_code if league.league_type == "private" else None,
+        "member_count": len(league.memberships),
+        "is_member": league.id in user_league_ids,
+        "is_creator": league.created_by == current_user.user_id
+    } for league in leagues]
+
+@api_router.post("/leagues/{league_id}/join")
+async def join_league(league_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Join a league by ID"""
+    result = await db.execute(select(League).where(League.id == league_id))
+    league = result.scalar_one_or_none()
+    
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    
+    # Check if already a member
+    existing = await db.execute(
+        select(LeagueMembership).where(
+            LeagueMembership.league_id == league_id,
+            LeagueMembership.user_id == current_user.user_id
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Already a member")
+    
+    membership = LeagueMembership(
+        id=str(uuid.uuid4()),
+        league_id=league_id,
+        user_id=current_user.user_id
+    )
+    db.add(membership)
+    await db.commit()
+    
+    return {"message": "Joined league successfully"}
+
+@api_router.post("/leagues/join-code/{invite_code}")
+async def join_league_by_code(invite_code: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Join a private league by invite code"""
+    result = await db.execute(select(League).where(League.invite_code == invite_code))
+    league = result.scalar_one_or_none()
+    
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    
+    existing = await db.execute(
+        select(LeagueMembership).where(
+            LeagueMembership.league_id == league.id,
+            LeagueMembership.user_id == current_user.user_id
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Already a member")
+    
+    membership = LeagueMembership(
+        id=str(uuid.uuid4()),
+        league_id=league.id,
+        user_id=current_user.user_id
+    )
+    db.add(membership)
+    await db.commit()
+    
+    return {"message": "Joined league successfully", "league_id": league.id, "league_name": league.name}
+
+@api_router.post("/leagues/{league_id}/leave")
+async def leave_league(league_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Leave a league"""
+    result = await db.execute(
+        select(LeagueMembership).where(
+            LeagueMembership.league_id == league_id,
+            LeagueMembership.user_id == current_user.user_id
+        )
+    )
+    membership = result.scalar_one_or_none()
+    
+    if not membership:
+        raise HTTPException(status_code=404, detail="Not a member of this league")
+    
+    await db.delete(membership)
+    await db.commit()
+    
+    return {"message": "Left league successfully"}
+
+@api_router.get("/leagues/{league_id}")
+async def get_league(league_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Get league details with leaderboard"""
+    result = await db.execute(
+        select(League).options(
+            selectinload(League.memberships).selectinload(LeagueMembership.user)
+        ).where(League.id == league_id)
+    )
+    league = result.scalar_one_or_none()
+    
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    
+    members = sorted(league.memberships, key=lambda m: m.user.skill_rank if m.user else 0, reverse=True)
+    
+    return {
+        "id": league.id,
+        "name": league.name,
+        "league_type": league.league_type,
+        "invite_code": league.invite_code,
+        "member_count": len(members),
+        "leaderboard": [{
+            "rank": idx + 1,
+            "user_id": m.user.user_id,
+            "username": m.user.username,
+            "avatar": m.user.avatar,
+            "skill_rank": m.user.skill_rank,
+            "is_current_user": m.user.user_id == current_user.user_id
+        } for idx, m in enumerate(members) if m.user]
+    }
+
 # Question Endpoints (Admin)
 @api_router.post("/questions")
 async def create_question(data: QuestionCreate, password: str, db: AsyncSession = Depends(get_db)):
