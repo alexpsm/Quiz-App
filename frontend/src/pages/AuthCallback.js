@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { PoweredByScore90 } from '../components/Score90Logo';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -10,7 +11,6 @@ export default function AuthCallback() {
   const hasProcessed = useRef(false);
 
   useEffect(() => {
-    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
     if (hasProcessed.current) return;
     hasProcessed.current = true;
 
@@ -28,10 +28,8 @@ export default function AuthCallback() {
         const response = await auth.processSession(sessionId);
         const { session_token, user } = response.data;
 
-        // Store session token in cookie (done by backend)
         setUser(user);
 
-        // Redirect to onboarding if no username, otherwise dashboard
         if (!user.username) {
           navigate('/onboarding', { state: { user } });
         } else {
@@ -47,10 +45,14 @@ export default function AuthCallback() {
   }, [location, navigate, setUser]);
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-background via-[#1a1a2e] to-background flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-gray-400">Processing authentication...</p>
+        <div className="relative w-16 h-16 mx-auto mb-6">
+          <div className="absolute inset-0 border-4 border-neon-blue/30 rounded-full"></div>
+          <div className="absolute inset-0 border-4 border-neon-pink border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">Processing authentication...</h2>
+        <PoweredByScore90 size="sm" className="justify-center" />
       </div>
     </div>
   );
