@@ -87,6 +87,41 @@ export default function Dashboard() {
           </motion.button>
         </div>
 
+        {/* Club Challenge Banner */}
+        {user?.favorite_club && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-accent/20 to-accent/5 border-2 border-accent/50 rounded-lg p-6"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-extrabold tracking-tighter uppercase text-white mb-1">
+                  {user.favorite_club} Challenge
+                </h3>
+                <p className="text-sm text-gray-300">Test your ball knowledge about {user.favorite_club}</p>
+              </div>
+              <div className="bg-accent/20 border border-accent rounded-lg px-3 py-2 text-center">
+                <p className="text-2xl font-black tracking-tighter text-accent">{user.club_knowledge_score || 0}</p>
+                <p className="text-xs text-gray-400 uppercase">Score</p>
+              </div>
+            </div>
+            <button
+              onClick={handleClubChallenge}
+              data-testid="club-challenge-btn"
+              className="w-full bg-accent text-white hover:bg-accent/90 h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all active:scale-95"
+            >
+              Start Club Challenge
+            </button>
+            <button
+              onClick={() => navigate('/club-leaderboard')}
+              className="w-full mt-2 border-2 border-accent/50 bg-transparent hover:bg-accent/10 text-accent h-10 px-6 rounded-sm font-bold uppercase tracking-wider text-sm transition-all"
+            >
+              View {user.favorite_club} Leaderboard
+            </button>
+          </motion.div>
+        )}
+
         {/* Active Games */}
         <div>
           <h2 className="text-xl font-bold uppercase tracking-tight mb-4 text-gray-300">Active Games</h2>
