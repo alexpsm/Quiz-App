@@ -140,7 +140,7 @@ class PaymentTransaction(Base):
     is_premium = Column(Boolean, default=False)
     payment_status = Column(String(50), default='pending')
     status = Column(String(50), default='initiated')
-    metadata = Column(JSON, default=dict)
+    payment_metadata = Column(JSON, default=dict)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
