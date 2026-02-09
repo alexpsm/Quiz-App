@@ -22,11 +22,15 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     favorite_club = Column(String(100), index=True)
     club_knowledge_score = Column(Integer, default=0)
+    country = Column(String(100), index=True)
+    age = Column(Integer)
+    phone_number = Column(String(20))
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     
     sessions = relationship('UserSession', back_populates='user', cascade='all, delete-orphan')
     games_as_player1 = relationship('Game', foreign_keys='Game.player1_id', back_populates='player1')
     games_as_player2 = relationship('Game', foreign_keys='Game.player2_id', back_populates='player2')
+    league_memberships = relationship('LeagueMembership', back_populates='user', cascade='all, delete-orphan')
 
 class UserSession(Base):
     __tablename__ = 'user_sessions'
