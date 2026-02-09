@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, Copy, Check } from 'lucide-react';
+import { Users, Copy, Check, Share2, MessageCircle, Zap, Shield } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { PoweredByScore90 } from '../components/Score90Logo';
 import { games } from '../lib/api';
@@ -31,6 +31,23 @@ export default function Matchmaking() {
     navigator.clipboard.writeText(generatedCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShareTo = (platform) => {
+    const msg = `Challenge me on QuizBall! Use code: ${generatedCode} to join. Prove your Ball Knowledge!`;
+    const encodedMsg = encodeURIComponent(msg);
+    const urls = {
+      whatsapp: `https://wa.me/?text=${encodedMsg}`,
+      messenger: `https://www.facebook.com/dialog/send?link=${encodeURIComponent(window.location.origin)}&app_id=0&redirect_uri=${encodeURIComponent(window.location.origin)}`,
+      instagram: null, // Instagram doesn't support direct share URLs
+    };
+    if (urls[platform]) {
+      window.open(urls[platform], '_blank');
+    } else {
+      navigator.clipboard.writeText(msg);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleJoinGame = async (e) => {
@@ -135,6 +152,35 @@ export default function Matchmaking() {
                   {copied ? <Check className="text-neon-yellow" size={24} /> : <Copy size={24} />}
                 </button>
               </div>
+
+              {/* Share Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleShareTo('whatsapp')}
+                  data-testid="share-whatsapp"
+                  className="flex-1 bg-[#25D366]/20 border border-[#25D366]/50 hover:bg-[#25D366]/30 text-[#25D366] h-10 rounded-sm font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <MessageCircle size={16} />
+                  WhatsApp
+                </button>
+                <button
+                  onClick={() => handleShareTo('messenger')}
+                  data-testid="share-messenger"
+                  className="flex-1 bg-[#0084FF]/20 border border-[#0084FF]/50 hover:bg-[#0084FF]/30 text-[#0084FF] h-10 rounded-sm font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <MessageCircle size={16} />
+                  Messenger
+                </button>
+                <button
+                  onClick={() => handleShareTo('instagram')}
+                  data-testid="share-instagram"
+                  className="flex-1 bg-[#E1306C]/20 border border-[#E1306C]/50 hover:bg-[#E1306C]/30 text-[#E1306C] h-10 rounded-sm font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <Share2 size={16} />
+                  Instagram
+                </button>
+              </div>
+
               <p className="text-xs text-gray-500 text-center">
                 Share this code with your friend to start a match
               </p>
@@ -168,6 +214,32 @@ export default function Matchmaking() {
               {loading ? 'Joining...' : 'Join Game'}
             </button>
           </form>
+        </div>
+
+        {/* League Widgets */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-card border-2 border-electric-purple/30 rounded-lg p-4 text-center">
+            <Zap className="text-electric-purple mx-auto mb-2" size={28} />
+            <h4 className="text-sm font-bold uppercase text-white mb-1">Public League</h4>
+            <p className="text-xs text-gray-500 mb-3">Join and compete globally</p>
+            <button
+              data-testid="join-public-league"
+              className="w-full border border-electric-purple/50 bg-electric-purple/10 hover:bg-electric-purple/20 text-electric-purple h-8 rounded-sm font-bold text-xs uppercase tracking-wider transition-all"
+            >
+              Coming Soon
+            </button>
+          </div>
+          <div className="bg-card border-2 border-neon-orange/30 rounded-lg p-4 text-center">
+            <Shield className="text-neon-orange mx-auto mb-2" size={28} />
+            <h4 className="text-sm font-bold uppercase text-white mb-1">Private League</h4>
+            <p className="text-xs text-gray-500 mb-3">Create your own league</p>
+            <button
+              data-testid="join-private-league"
+              className="w-full border border-neon-orange/50 bg-neon-orange/10 hover:bg-neon-orange/20 text-neon-orange h-8 rounded-sm font-bold text-xs uppercase tracking-wider transition-all"
+            >
+              Coming Soon
+            </button>
+          </div>
         </div>
 
         {error && (
