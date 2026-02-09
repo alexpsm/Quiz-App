@@ -145,7 +145,7 @@ export default function Onboarding() {
             <button
               type="submit"
               data-testid="continue-btn"
-              disabled={loading || !username || username.length < 3}
+              disabled={loading || !username || username.length < 3 || !favoriteClub}
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all active:scale-95 disabled:opacity-50"
             >
               {loading ? 'Saving...' : 'Continue to QuizBall'}
