@@ -486,6 +486,27 @@ async def matchmake(current_user: User = Depends(get_current_user), db: AsyncSes
     
     return {"game_id": game.id}
 
+@api_router.post("/games/club-challenge")
+async def start_club_challenge(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Start a solo club challenge game with questions about user's favorite club"""
+    if not current_user.favorite_club:
+        raise HTTPException(status_code=400, detail="Please select your favorite club first")
+    
+    # Create a special single-player game
+    game = Game(
+        id=str(uuid.uuid4()),
+        player1_id=current_user.user_id,
+        player2_id=current_user.user_id,  # Same player for solo mode
+        current_round=1,
+        status='club_challenge',
+        turn_player_id=current_user.user_id
+    )
+    db.add(game)
+    await db.commit()
+    await db.refresh(game)
+    
+    return {"game_id": game.id, "club": current_user.favorite_club}
+
 @api_router.post("/games/invite")
 async def create_invite(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     invite_code = generate_invite_code()
