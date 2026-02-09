@@ -1,0 +1,152 @@
+{
+  "identity": {
+    "name": "QuizBall - The Broadcast Director",
+    "persona": "High-energy sports broadcast designer. Dark mode native. Obsessed with stats, neon accents, and dramatic lighting.",
+    "tone": "Competitive, Premium, Electric, Data-Driven",
+    "theme_preference": "dark"
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Barlow Condensed, sans-serif",
+      "body": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "import_instructions": "Add this to index.html: <link href='https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;800&family=Inter:wght@400;500;700&display=swap' rel='stylesheet'>",
+    "usage": {
+      "h1": "text-4xl font-extrabold tracking-tighter uppercase font-headings",
+      "h2": "text-3xl font-bold tracking-tight uppercase font-headings",
+      "h3": "text-xl font-semibold tracking-wide uppercase text-muted-foreground font-headings",
+      "body": "text-base font-normal leading-relaxed text-gray-300 font-body",
+      "stat_number": "text-5xl font-black tracking-tighter text-primary font-headings"
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": "#0a0a0a",
+      "foreground": "#ffffff",
+      "card": "#171717",
+      "card_foreground": "#ffffff",
+      "primary": "#fbbf24",
+      "primary_foreground": "#000000",
+      "secondary": "#3b82f6",
+      "secondary_foreground": "#ffffff",
+      "accent": "#22c55e",
+      "destructive": "#ef4444",
+      "border": "#262626",
+      "input": "#262626",
+      "ring": "#fbbf24"
+    },
+    "gradients": {
+      "gold_rush": "bg-gradient-to-r from-amber-400 to-yellow-600",
+      "night_match": "bg-gradient-to-b from-slate-900 to-black",
+      "neon_blue": "bg-gradient-to-r from-blue-600 to-cyan-500"
+    },
+    "semantic": {
+      "success": "text-green-500",
+      "error": "text-red-500",
+      "warning": "text-yellow-500",
+      "info": "text-blue-500"
+    }
+  },
+  "layout": {
+    "container": "max-w-md mx-auto min-h-screen bg-background relative overflow-hidden shadow-2xl border-x border-white/5",
+    "spacing": {
+      "page_padding": "p-5",
+      "section_gap": "gap-6",
+      "card_padding": "p-6"
+    },
+    "grid_system": "grid grid-cols-1 gap-4",
+    "z_index": {
+      "bottom_nav": "z-50",
+      "modal": "z-50",
+      "overlay": "z-40"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all active:scale-95",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/90 h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-all active:scale-95",
+      "outline": "border-2 border-white/20 bg-transparent hover:bg-white/10 text-white h-12 px-6 rounded-sm font-bold uppercase tracking-wider transition-all",
+      "ghost": "hover:bg-white/5 text-white h-10 px-4 rounded-sm font-medium transition-all"
+    },
+    "cards": {
+      "base": "bg-card border border-white/10 rounded-lg shadow-xl overflow-hidden relative",
+      "glass": "bg-black/40 backdrop-blur-xl border border-white/10 rounded-lg shadow-2xl",
+      "interactive": "hover:border-primary/50 transition-colors cursor-pointer active:scale-[0.98]"
+    },
+    "inputs": {
+      "base": "bg-black/50 border-white/20 focus:border-primary focus:ring-1 focus:ring-primary h-12 rounded-sm text-white placeholder:text-white/30"
+    },
+    "navigation": {
+      "bottom_bar": "fixed bottom-0 left-0 right-0 h-16 bg-black/90 backdrop-blur-lg border-t border-white/10 flex items-center justify-around z-50 max-w-md mx-auto"
+    }
+  },
+  "visual_enhancers": {
+    "borders": "border border-white/10",
+    "shadows": {
+      "neon_gold": "shadow-[0_0_20px_-5px_rgba(251,191,36,0.5)]",
+      "neon_blue": "shadow-[0_0_20px_-5px_rgba(59,130,246,0.5)]"
+    },
+    "textures": {
+      "noise": "bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none fixed inset-0 z-0",
+      "grid": "bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"
+    }
+  },
+  "media": {
+    "images": {
+      "background_stadium": "https://images.unsplash.com/photo-1608154119029-53f3c6ad12e4?auto=format&fit=crop&w=800&q=80",
+      "victory_silhouette": "https://images.unsplash.com/photo-1618787113620-fc01359c1c78?auto=format&fit=crop&w=800&q=80",
+      "abstract_texture": "https://images.unsplash.com/photo-1758637612400-09e155a1278c?auto=format&fit=crop&w=800&q=80",
+      "generic_avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
+    },
+    "icons": "Use Lucide-React icons. Stroke width: 2px. Size: 20px or 24px."
+  },
+  "motion": {
+    "page_transition": {
+      "initial": { "opacity": 0, "y": 20 },
+      "animate": { "opacity": 1, "y": 0 },
+      "exit": { "opacity": 0, "y": -20 },
+      "transition": { "duration": 0.3, "ease": "easeOut" }
+    },
+    "micro_interactions": {
+      "hover": { "scale": 1.02 },
+      "tap": { "scale": 0.95 }
+    }
+  },
+  "accessibility": {
+    "contrast_check": "Ensure all text on dark backgrounds is at least text-gray-300 or lighter.",
+    "focus_states": "Visible focus rings (ring-2 ring-primary) on all interactive elements.",
+    "touch_targets": "Minimum 44x44px for all tappable areas."
+  },
+  "instructions_to_main_agent": [
+    "1. SETUP: Update tailwind.config.js to include the custom colors and fonts defined above.",
+    "2. FONTS: Add the Google Fonts link to the <head> of public/index.html.",
+    "3. LAYOUT: Wrap the entire app in a mobile-constrained container (max-w-md mx-auto) to simulate a mobile app on desktop screens.",
+    "4. BACKGROUND: Apply the 'night_match' gradient or 'background_stadium' image (with heavy overlay) as the global background.",
+    "5. COMPONENTS: Build the 'QuizCard' component first - it's the core of the game. Use the 'glass' card style.",
+    "6. NAVIGATION: Implement the Bottom Tab Bar with Lucide icons (Home, Search, Store, User).",
+    "7. DATA-TESTID: Add data-testid attributes to all buttons, inputs, and navigation items (e.g., 'nav-home', 'btn-submit-answer').",
+    "8. THEME: Force Dark Mode. Do not implement a light mode toggle. The brand is strictly dark.",
+    "9. SCORE90 VIBE: Use uppercase, condensed fonts for all headers. Use gold (#fbbf24) for primary actions and winning states."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: transition: all. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
+    "You MUST NOT center align the app container, ie do not add .App { text-align: center; } in the css file. This disrupts the human natural reading flow of text",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯📚🎭🎬🎪🎉🎊🎁🎀🎂🍰🎈🎨🎰💰💵💳🏦💎🪙💸🤑📊📈📉💹🔢🏆🥇 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Main agent relies on these image URLs. Missing categories (especially sponsor logos) = main agent will use placeholder text which is FORBIDDEN",
+    "Prioritize using pre-existing components from src/components/ui when applicable",
+    "Create new components that match the style and conventions of existing components when needed",
+    "Examine existing components to understand the project's component patterns before creating new ones",
+    "Components MUST use named exports (export const ComponentName = ...)",
+    "Pages MUST use default exports (export default function PageName() {...})",
+    "Use sonner for toasts. Sonner component are located in /app/src/components/ui/sonner.tsx"
+  ]
+}
