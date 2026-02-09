@@ -7,6 +7,7 @@ Build a cross-platform, mobile-first web app called "QuizBall" — a football tr
 - **Frontend:** React, Tailwind CSS, Framer Motion, Lucide-React, Shadcn/UI
 - **Backend:** FastAPI, SQLAlchemy (async), PostgreSQL (Supabase), Alembic
 - **Auth:** Email/Password + Emergent-managed Google OAuth
+- **Payments:** Stripe (via emergentintegrations)
 
 ## V1 MVP Features (COMPLETE)
 - [x] Asynchronous 1v1 duels over 6 rounds, 3 questions per round
@@ -28,33 +29,53 @@ Build a cross-platform, mobile-first web app called "QuizBall" — a football tr
 - [x] Social sharing (WhatsApp, Messenger, Instagram) on Matchmaking
 - [x] Full League System (create/join/leave public & private leagues)
 - [x] "Your Rank" section on Dashboard & Profile (Global, Club, Country, League rankings)
-- [x] Store page with credit packages and Premium option
+- [x] Social Auth buttons: Facebook, X (Twitter), Apple (UI-ready, require OAuth credentials)
+- [x] Stripe Payment integration: Credit packages ($0.99/$3.99/$6.99) + Premium ($4.99)
+- [x] Weekly Club Wars — Club vs Club collective competition with weekly leaderboard
+- [x] Store with credit packages and Premium purchase
 - [x] Ad space placeholder on Store page
 
-## Pending Features (Backlog)
-- [ ] Meta (Facebook) Auth provider
-- [ ] X (Twitter) Auth provider
-- [ ] Apple Auth provider
-- [ ] Store payment integration (Stripe or in-app purchases)
-- [ ] Firebase analytics
-
 ## Key API Endpoints
+### Auth
 - `/api/auth/{register, login, logout, me, session}` - Authentication
-- `/api/users/me` - Profile update (incl. country, age, phone)
-- `/api/users/avatar` - Avatar image upload
-- `/api/users/my-rank` - User rankings (global, club, country, league)
-- `/api/users/leaderboard` - Global leaderboard
-- `/api/users/club-leaderboard` - Club-specific leaderboard
-- `/api/clubs` - Available football clubs
-- `/api/games/{matchmake, quick-play, club-challenge, invite, join, history}` - Game management
-- `/api/games/{id}/select-category` - Category selection
-- `/api/games/{id}/answer` - Answer submission
-- `/api/leagues` - League CRUD (create, list)
-- `/api/leagues/{id}` - League details with leaderboard
-- `/api/leagues/{id}/join` - Join league
-- `/api/leagues/{id}/leave` - Leave league
-- `/api/leagues/join-code/{code}` - Join private league by invite code
-- `/api/questions` - Question CRUD (admin)
+
+### Users
+- `/api/users/me` (PUT) - Profile update (incl. country, age, phone)
+- `/api/users/avatar` (POST) - Avatar image upload
+- `/api/users/my-rank` (GET) - User rankings (global, club, country, league)
+- `/api/users/leaderboard` (GET) - Global leaderboard
+- `/api/users/club-leaderboard` (GET) - Club-specific leaderboard
+
+### Games
+- `/api/games/matchmake` (POST) - Random matchmaking
+- `/api/games/quick-play` (POST) - Play vs TheScore90Bot
+- `/api/games/club-challenge` (POST) - Solo club challenge
+- `/api/games/invite` (POST) - Create invite code
+- `/api/games/join/{code}` (POST) - Join by invite
+- `/api/games/history` (GET) - Completed game history
+- `/api/games/{id}` (GET) - Game details
+- `/api/games/{id}/select-category` (POST) - Category selection
+- `/api/games/{id}/answer` (POST) - Answer submission
+
+### Leagues
+- `/api/leagues` (GET/POST) - List/Create leagues
+- `/api/leagues/{id}` (GET) - League details with leaderboard
+- `/api/leagues/{id}/join` (POST) - Join league
+- `/api/leagues/{id}/leave` (POST) - Leave league
+- `/api/leagues/join-code/{code}` (POST) - Join by invite code
+
+### Payments
+- `/api/payments/checkout` (POST) - Create Stripe checkout session
+- `/api/payments/status/{session_id}` (GET) - Poll payment status
+- `/api/webhook/stripe` (POST) - Stripe webhook handler
+
+### Club Wars
+- `/api/club-wars/current` (GET) - Current week's standings
+- `/api/club-wars/contribute` (POST) - Play game for club war
+
+### Admin
+- `/api/questions` (GET/POST) - Question CRUD
+- `/api/questions/categories` (GET) - Available categories
 
 ## Data Models
 - **users:** user_id, email, name, username, avatar, skill_rank, credits, favorite_club, club_knowledge_score, country, age, phone_number
@@ -63,7 +84,15 @@ Build a cross-platform, mobile-first web app called "QuizBall" — a football tr
 - **game_rounds:** id, game_id, round_number, category, answers, scores
 - **leagues:** id, name, league_type (public/private), invite_code, created_by
 - **league_memberships:** id, league_id, user_id
+- **payment_transactions:** id, user_id, session_id, package_id, amount, currency, credits_to_add, is_premium, payment_status, status
+- **club_wars:** id, week_start, week_end, status
+- **club_war_contributions:** id, club_war_id, user_id, club_name, points, games_played
+
+## Pending Features (Backlog)
+- [ ] Full Facebook/X/Apple OAuth implementation (requires developer portal credentials)
+- [ ] Firebase analytics integration
 
 ## Test Credentials
 - Test user: testuser@quizball.com / Test12345
 - Admin: quizball_admin_2026
+- Stripe: sk_test_emergent (test mode)
