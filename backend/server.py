@@ -1206,6 +1206,9 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
 
 app.include_router(api_router)
 
+# Serve uploaded files
+app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
