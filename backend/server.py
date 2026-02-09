@@ -51,6 +51,7 @@ class UserResponse(BaseModel):
 class UpdateProfileRequest(BaseModel):
     username: Optional[str] = None
     avatar: Optional[str] = None
+    favorite_club: Optional[str] = None
 
 class QuestionCreate(BaseModel):
     question_text: str
