@@ -1335,11 +1335,27 @@ async def bot_play(game_id: str, current_user: User = Depends(get_current_user),
     game_round.player2_score = bot_score
     
     # Advance game
+    credits_won = 0
     if game.current_round >= 6:
         total_p1 = sum(r.player1_score for r in game.rounds)
         total_p2 = sum(r.player2_score for r in game.rounds)
         game.winner_id = game.player1_id if total_p1 >= total_p2 else game.player2_id
         game.status = 'finished'
+        
+        # Credit payout for challenge/bet games
+        if game.credit_bet and game.credit_bet > 0:
+            if game.winner_id == current_user.user_id:
+                # Winner gets the payout
+                if game.challenge_id:
+                    # Challenge: win_amount from challenge
+                    ch_result = await db.execute(select(WeeklyChallenge).where(WeeklyChallenge.id == game.challenge_id))
+                    ch = ch_result.scalar_one_or_none()
+                    credits_won = ch.win_amount if ch else game.credit_bet * 2
+                else:
+                    # P2P: winner takes all (both bets)
+                    credits_won = game.credit_bet * 2
+                current_user.credits = (current_user.credits or 0) + credits_won
+            # Loser already had credits deducted at game start
         
         # Update Ball Knowledge score
         old_rank, new_rank, delta = await update_ball_knowledge(db, game, current_user)
@@ -1356,7 +1372,8 @@ async def bot_play(game_id: str, current_user: User = Depends(get_current_user),
         "bot_score": bot_score,
         "round_complete": True,
         "game_status": game.status,
-        "ball_knowledge_update": {"old": old_rank, "new": new_rank, "delta": delta} if delta is not None else None
+        "ball_knowledge_update": {"old": old_rank, "new": new_rank, "delta": delta} if delta is not None else None,
+        "credits_won": credits_won if credits_won > 0 else None
     }
 
 @api_router.post("/games/{game_id}/select-category")
