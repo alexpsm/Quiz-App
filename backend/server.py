@@ -159,6 +159,309 @@ async def update_player_tier(user, game_score: int) -> dict:
     return None
 
 
+# ========== ACHIEVEMENT BADGES SYSTEM ==========
+
+ACHIEVEMENTS = {
+    # Game milestone achievements
+    "first_win": {
+        "name": "First Victory",
+        "description": "Win your first game",
+        "icon": "trophy",
+        "category": "milestone"
+    },
+    "win_streak_3": {
+        "name": "Hot Streak",
+        "description": "Win 3 games in a row",
+        "icon": "flame",
+        "category": "streak"
+    },
+    "win_streak_5": {
+        "name": "On Fire",
+        "description": "Win 5 games in a row",
+        "icon": "fire",
+        "category": "streak"
+    },
+    "win_streak_10": {
+        "name": "Unstoppable",
+        "description": "Win 10 games in a row",
+        "icon": "zap",
+        "category": "streak"
+    },
+    "perfect_game": {
+        "name": "Perfect Game",
+        "description": "Answer all 18 questions correctly in one game",
+        "icon": "star",
+        "category": "skill"
+    },
+    "perfect_round": {
+        "name": "Flawless Round",
+        "description": "Answer all 3 questions correctly in under 15 seconds total",
+        "icon": "clock",
+        "category": "skill"
+    },
+    "games_10": {
+        "name": "Getting Started",
+        "description": "Play 10 games",
+        "icon": "play",
+        "category": "milestone"
+    },
+    "games_50": {
+        "name": "Regular Player",
+        "description": "Play 50 games",
+        "icon": "gamepad",
+        "category": "milestone"
+    },
+    "games_100": {
+        "name": "Dedicated Fan",
+        "description": "Play 100 games",
+        "icon": "heart",
+        "category": "milestone"
+    },
+    "wins_25": {
+        "name": "Quarter Century",
+        "description": "Win 25 games",
+        "icon": "award",
+        "category": "milestone"
+    },
+    "wins_50": {
+        "name": "Half Century",
+        "description": "Win 50 games",
+        "icon": "medal",
+        "category": "milestone"
+    },
+    "wins_100": {
+        "name": "Century Club",
+        "description": "Win 100 games",
+        "icon": "crown",
+        "category": "milestone"
+    },
+    "ball_knowledge_1200": {
+        "name": "Rising Star",
+        "description": "Reach 1200 Ball Knowledge rating",
+        "icon": "trending-up",
+        "category": "rating"
+    },
+    "ball_knowledge_1500": {
+        "name": "Expert",
+        "description": "Reach 1500 Ball Knowledge rating",
+        "icon": "brain",
+        "category": "rating"
+    },
+    "ball_knowledge_1800": {
+        "name": "Master",
+        "description": "Reach 1800 Ball Knowledge rating",
+        "icon": "gem",
+        "category": "rating"
+    },
+    "challenge_winner": {
+        "name": "Challenge Champion",
+        "description": "Win a weekly challenge",
+        "icon": "flag",
+        "category": "challenge"
+    },
+    "hard_challenge_winner": {
+        "name": "Fearless",
+        "description": "Win a hard or very hard weekly challenge",
+        "icon": "shield",
+        "category": "challenge"
+    },
+    "club_devotee": {
+        "name": "Club Devotee",
+        "description": "Win 10 club challenge games",
+        "icon": "home",
+        "category": "club"
+    },
+    "comeback_king": {
+        "name": "Comeback King",
+        "description": "Win a game after being down by 300+ points",
+        "icon": "refresh-cw",
+        "category": "special"
+    },
+    "speed_demon": {
+        "name": "Speed Demon",
+        "description": "Answer a question correctly in under 2 seconds",
+        "icon": "zap",
+        "category": "skill"
+    },
+}
+
+
+async def check_and_award_achievements(db: AsyncSession, user: User, game: Game = None, round_data: dict = None) -> List[dict]:
+    """
+    Check if user has earned any new achievements and award them.
+    Returns list of newly earned achievements.
+    """
+    newly_earned = []
+    
+    # Get user's existing achievements
+    result = await db.execute(
+        select(UserAchievement.achievement_id).where(UserAchievement.user_id == user.user_id)
+    )
+    existing = {row[0] for row in result.all()}
+    
+    async def award_if_new(achievement_id: str):
+        if achievement_id not in existing and achievement_id in ACHIEVEMENTS:
+            db.add(UserAchievement(
+                id=str(uuid.uuid4()),
+                user_id=user.user_id,
+                achievement_id=achievement_id
+            ))
+            newly_earned.append({
+                "id": achievement_id,
+                **ACHIEVEMENTS[achievement_id]
+            })
+            existing.add(achievement_id)
+    
+    # Count user's games and wins
+    games_result = await db.execute(
+        select(func.count()).select_from(Game).where(
+            or_(Game.player1_id == user.user_id, Game.player2_id == user.user_id),
+            Game.status == 'finished'
+        )
+    )
+    total_games = games_result.scalar() or 0
+    
+    wins_result = await db.execute(
+        select(func.count()).select_from(Game).where(
+            Game.winner_id == user.user_id,
+            Game.status == 'finished'
+        )
+    )
+    total_wins = wins_result.scalar() or 0
+    
+    # Check game count milestones
+    if total_games >= 10:
+        await award_if_new("games_10")
+    if total_games >= 50:
+        await award_if_new("games_50")
+    if total_games >= 100:
+        await award_if_new("games_100")
+    
+    # Check win milestones
+    if total_wins >= 1:
+        await award_if_new("first_win")
+    if total_wins >= 25:
+        await award_if_new("wins_25")
+    if total_wins >= 50:
+        await award_if_new("wins_50")
+    if total_wins >= 100:
+        await award_if_new("wins_100")
+    
+    # Check Ball Knowledge rating milestones
+    skill_rank = user.skill_rank or 1000
+    if skill_rank >= 1200:
+        await award_if_new("ball_knowledge_1200")
+    if skill_rank >= 1500:
+        await award_if_new("ball_knowledge_1500")
+    if skill_rank >= 1800:
+        await award_if_new("ball_knowledge_1800")
+    
+    # Check win streaks (last N consecutive wins)
+    streak_result = await db.execute(
+        select(Game).where(
+            or_(Game.player1_id == user.user_id, Game.player2_id == user.user_id),
+            Game.status == 'finished'
+        ).order_by(Game.updated_at.desc()).limit(10)
+    )
+    recent_games = streak_result.scalars().all()
+    
+    current_streak = 0
+    for g in recent_games:
+        if g.winner_id == user.user_id:
+            current_streak += 1
+        else:
+            break
+    
+    if current_streak >= 3:
+        await award_if_new("win_streak_3")
+    if current_streak >= 5:
+        await award_if_new("win_streak_5")
+    if current_streak >= 10:
+        await award_if_new("win_streak_10")
+    
+    # Check game-specific achievements if game is provided
+    if game and game.status == 'finished':
+        # Perfect game check (all 18 questions correct)
+        is_p1 = game.player1_id == user.user_id
+        total_correct = 0
+        total_questions = 0
+        
+        for r in game.rounds:
+            answers = r.player1_answers if is_p1 else r.player2_answers
+            if answers:
+                for ans in answers:
+                    total_questions += 1
+                    if ans.get("is_correct"):
+                        total_correct += 1
+        
+        if total_questions >= 18 and total_correct == total_questions:
+            await award_if_new("perfect_game")
+        
+        # Comeback king check
+        if game.winner_id == user.user_id:
+            # Check if user was ever down by 300+ during the game
+            running_user = 0
+            running_opp = 0
+            max_deficit = 0
+            for r in sorted(game.rounds, key=lambda x: x.round_number):
+                if is_p1:
+                    running_user += r.player1_score
+                    running_opp += r.player2_score
+                else:
+                    running_user += r.player2_score
+                    running_opp += r.player1_score
+                deficit = running_opp - running_user
+                if deficit > max_deficit:
+                    max_deficit = deficit
+            
+            if max_deficit >= 300:
+                await award_if_new("comeback_king")
+        
+        # Challenge achievements
+        if game.challenge_id and game.winner_id == user.user_id:
+            await award_if_new("challenge_winner")
+            # Check difficulty
+            ch_result = await db.execute(select(WeeklyChallenge).where(WeeklyChallenge.id == game.challenge_id))
+            challenge = ch_result.scalar_one_or_none()
+            if challenge and challenge.difficulty in ('hard', 'very_hard'):
+                await award_if_new("hard_challenge_winner")
+        
+        # Club challenge wins
+        if game.status == 'finished' and game.player1_id == game.player2_id:
+            club_wins_result = await db.execute(
+                select(func.count()).select_from(Game).where(
+                    Game.player1_id == user.user_id,
+                    Game.player2_id == user.user_id,
+                    Game.winner_id == user.user_id,
+                    Game.status == 'finished'
+                )
+            )
+            club_wins = club_wins_result.scalar() or 0
+            if club_wins >= 10:
+                await award_if_new("club_devotee")
+    
+    # Check round-specific achievements
+    if round_data:
+        answers = round_data.get("answers", [])
+        total_time = sum(a.get("time_taken", 0) for a in answers)
+        all_correct = all(a.get("is_correct") for a in answers) if answers else False
+        
+        # Flawless round: all correct in under 15 seconds total
+        if len(answers) >= 3 and all_correct and total_time < 15:
+            await award_if_new("perfect_round")
+        
+        # Speed demon: any answer under 2 seconds
+        for ans in answers:
+            if ans.get("is_correct") and ans.get("time_taken", 999) < 2:
+                await award_if_new("speed_demon")
+                break
+    
+    if newly_earned:
+        await db.commit()
+    
+    return newly_earned
+
+
 def calculate_elo_change(player_rank: int, opponent_rank: int, winner_is_p1: bool, score_diff: int = 0) -> tuple:
     """
     Calculate ELO rating changes for both players after a match.
