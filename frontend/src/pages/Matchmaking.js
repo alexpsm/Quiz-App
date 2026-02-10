@@ -149,10 +149,10 @@ export default function Matchmaking() {
     setLoading(true);
     setError('');
     try {
-      const response = await games.matchmake();
+      const response = await games.quickPlay();
       navigate(`/game/${response.data.game_id}`);
     } catch (err) {
-      setError('No opponents available');
+      setError('Failed to start game');
     } finally {
       setLoading(false);
     }
