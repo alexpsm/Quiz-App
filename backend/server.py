@@ -941,7 +941,7 @@ async def get_random_categories(db: AsyncSession = Depends(get_db)):
 
 # Game Endpoints
 BOT_USERNAME = "TheScore90Bot"
-BOT_AVATAR = "https://customer-assets.emergentagent.com/job_d6d8626b-a5b2-4b68-bfb7-a1cde78903a3/artifacts/ip2vwr0v_Gemini_Generated_Image_c4gcrvc4gcrvc4gc.png"
+BOT_AVATAR = "https://customer-assets.emergentagent.com/job_d6d8626b-a5b2-4b68-bfb7-a1cde78903a3/artifacts/0bpnaz6x_Black-Avatar.png"
 
 async def get_or_create_bot(db: AsyncSession) -> User:
     """Get or create the TheScore90Bot user"""
