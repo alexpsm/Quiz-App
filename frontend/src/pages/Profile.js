@@ -180,7 +180,7 @@ export default function Profile() {
             </div>
           ) : (
             <div className="space-y-2">
-              {gameHistory.map((game) => (
+              {gameHistory.slice(0, showAllHistory ? 10 : 5).map((game) => (
                 <motion.div
                   key={game.id}
                   initial={{ opacity: 0, x: -10 }}
@@ -207,6 +207,15 @@ export default function Profile() {
                   </div>
                 </motion.div>
               ))}
+              {gameHistory.length > 5 && (
+                <button
+                  onClick={() => setShowAllHistory(!showAllHistory)}
+                  data-testid="toggle-history-btn"
+                  className="w-full py-2 text-sm font-bold uppercase tracking-wider text-neon-blue hover:text-neon-pink transition-colors flex items-center justify-center gap-1"
+                >
+                  {showAllHistory ? <><ChevronUp size={16} /> Show Less</> : <><ChevronDown size={16} /> Show All ({gameHistory.length})</>}
+                </button>
+              )}
             </div>
           )}
         </div>
