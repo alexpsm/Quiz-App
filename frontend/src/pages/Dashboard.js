@@ -302,7 +302,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {activeGames.map((game) => (
+              {activeGames.slice(0, showAllGames ? 10 : 5).map((game) => (
                 <motion.div
                   key={game.id}
                   whileHover={{ scale: 1.01 }}
@@ -349,6 +349,15 @@ export default function Dashboard() {
                   </div>
                 </motion.div>
               ))}
+              {activeGames.length > 5 && (
+                <button
+                  onClick={() => setShowAllGames(!showAllGames)}
+                  data-testid="toggle-games-btn"
+                  className="w-full py-2 text-sm font-bold uppercase tracking-wider text-neon-blue hover:text-neon-pink transition-colors flex items-center justify-center gap-1"
+                >
+                  {showAllGames ? <><ChevronUp size={16} /> Show Less</> : <><ChevronDown size={16} /> Show All ({activeGames.length})</>}
+                </button>
+              )}
             </div>
           )}
         </div>
