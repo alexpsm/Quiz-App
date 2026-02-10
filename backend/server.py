@@ -1594,6 +1594,14 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
                 game.status = 'finished'
                 old_rank, new_rank, delta = await update_ball_knowledge(db, game, current_user)
                 bk_update = {"old": old_rank, "new": new_rank, "delta": delta}
+                
+                # P2P credit payout
+                if game.credit_bet and game.credit_bet > 0:
+                    winner_id = game.winner_id
+                    winner_result = await db.execute(select(User).where(User.user_id == winner_id))
+                    winner_user = winner_result.scalar_one_or_none()
+                    if winner_user:
+                        winner_user.credits = (winner_user.credits or 0) + game.credit_bet * 2
             else:
                 game.current_round += 1
                 game.turn_player_id = game.player1_id
