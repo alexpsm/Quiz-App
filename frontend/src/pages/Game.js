@@ -371,7 +371,7 @@ export default function Game() {
             </div>
             <span className="text-gray-600 text-2xl font-black">VS</span>
             <div className="flex items-center gap-3 flex-row-reverse">
-              <img src={opponent?.avatar} alt="Opponent" className="w-12 h-12 rounded-full border-2 border-gray-500" />
+              <TieredAvatar src={opponent?.avatar} alt="Opponent" tier={opponent?.player_tier || 1} size="md" />
               <div className="text-right">
                 <p className="font-bold text-white text-sm">{opponent?.username || 'Waiting...'}</p>
                 <p className="text-3xl font-black tracking-tighter text-gray-400">{game.opponent_score}</p>
