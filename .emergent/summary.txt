@@ -1,134 +1,243 @@
 <analysis>**original_problem_statement:**
-The user wants to enhance the quiz application with two major features:
-1.  **Greater Question Variation:** Update the quiz database so that generic categories like 'club-history' are replaced with specific club names (e.g., 'Manchester United-history', 'Bayern Munich-history').
-2.  **Adaptive Matchmaking & Skill Score:**
-    *   Create adaptive matchmaking logic that pairs players based on their Ball Knowledge score ().
-    *   The Ball Knowledge score should increase or decrease after each match, depending on the match's difficulty (opponent's score) and the user's performance (win/loss).
+The user's initial request was to enhance the QuizBall application by adding greater question variety with club-specific categories and implementing an adaptive matchmaking system based on a Ball Knowledge skill score.
+
+This evolved through several user requests:
+1.  **Consolidate Questions:** Combine all club-specific questions into a single Club category.
+2.  **Enhance Club Challenge:** Ensure the Club Challenge game mode exclusively uses questions related to the user's favorite club.
+3.  **Expand Database:** Generate over 3,250 new questions for the Club category, covering all 96 available clubs.
+4.  **Bug Fix (Answer Distribution):** Address an issue where correct answers appeared to be skewed towards a single option.
+5.  **Bug Fix (Crash):** Resolve a critical bug where the application would crash after a user submitted an answer in a game.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a functional quiz game called QuizBall. Users can register, complete an onboarding process, play single-player games against a bot, create and join leagues, and view rankings. A Ball Knowledge score () exists for each user but is not currently used for matchmaking or dynamically updated based on performance. The question database uses static, generic categories stored in . There is no existing logic for skill-based matchmaking.
+The application is a full-stack quiz game with user registration, single-player modes, leagues, and leaderboards. Recent work has significantly enhanced its features:
+*   A skill-based matchmaking system with an ELO-like score () has been fully implemented, including backend logic and a frontend UI.
+*   The question database has been expanded to over 3,700 questions, all consolidated under a single Club category.
+*   The Club Challenge mode is functional and correctly filters questions based on a user's selected favorite club.
+*   The backend has been migrated from SQLite to PostgreSQL and now uses asynchronous database operations with FastAPI.
+*   A critical bug causing the application to crash upon answering a question has been diagnosed and a fix has been implemented.
 
 **Last working item**:
-*   **Last item agent was working:** The agent had just begun investigating the user's new request for question variety and adaptive matchmaking. It started by exploring the current question data structure in  and confirming the absence of any matchmaking logic in .
-*   **Status:** NOT STARTED
-*   **Agent Testing Done:** N
-*   **Which testing method agent to use?** This feature requires significant backend changes. The agent should use a combination of  for initial endpoint testing and the  for comprehensive validation of the new matchmaking and score update logic.
+*   **Last item agent was working:** Fixing a critical bug where the app crashed after a user selected an answer. The root cause was a  error in the database, indicating duplicate  entries were being created.
+*   **Status:** USER VERIFICATION PENDING
+*   **Agent Testing Done:** Y (The agent performed manual testing by playing through a full game and confirmed the crash was resolved. Backend logs were also checked.)
+*   **Which testing method agent to use?** backend testing agent. Although a manual test was successful, a full regression test on the game flow is recommended to ensure the fix did not introduce any side effects.
 *   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-There are no pending bugs or issues. The previous bug reported by the user has been resolved.
+*   **Issue 1: App crashes after selecting an answer (P0)**
+    *   **Attempted fixes:** The agent identified that duplicate  records were causing a  database error. The fix involved modifying  in two places ( and  endpoints) to implement a get-or-create pattern for  objects, preventing new duplicates. Existing duplicate records were also deleted from the database.
+    *   **Next debug checklist:**
+        1.  Confirm with the user if the crash is still occurring.
+        2.  If it persists, immediately check the backend error logs (    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/backend/server.py", line 1345, in submit_answer
+    game_round = round_result.scalar_one_or_none()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/sqlalchemy/engine/result.py", line 1504, in scalar_one_or_none
+    return self._only_one_row(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/sqlalchemy/engine/result.py", line 825, in _only_one_row
+    raise exc.MultipleResultsFound(
+sqlalchemy.exc.MultipleResultsFound: Multiple rows were found when one or none was required
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/root/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 408, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/applications.py", line 123, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 148, in simple_response
+    await self.app(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/root/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 756, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 776, in app
+    await route.handle(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/root/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/backend/server.py", line 1345, in submit_answer
+    game_round = round_result.scalar_one_or_none()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/sqlalchemy/engine/result.py", line 1504, in scalar_one_or_none
+    return self._only_one_row(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/sqlalchemy/engine/result.py", line 825, in _only_one_row
+    raise exc.MultipleResultsFound(
+sqlalchemy.exc.MultipleResultsFound: Multiple rows were found when one or none was required
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [86]
+INFO:     Started server process [1491]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1491]
+INFO:     Started server process [1729]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1729]
+INFO:     Stopping reloader process [48]
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [1752] using WatchFiles
+INFO:     Started server process [1754]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [48] using WatchFiles
+INFO:     Started server process [82]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.) for any  errors or new exceptions.
+        3.  Run a comprehensive regression test using the  to simulate the full game flow and validate the fix under load.
+    *   **Why fix this issue and what will be achieved with the fix?** This is a game-breaking bug that makes the core gameplay unusable. Fixing it is the highest priority.
+    *   **Status:** USER VERIFICATION PENDING
+    *   **Is recurring issue?** N
+    *   **Should Test frontend/backend/both after fix?** Both.
+    *   **Blocked on other issue:** None
 
 **In progress Task List**:
-There are no tasks currently in progress. The agent is in the planning phase for the new feature request.
+There are no tasks currently in progress.
 
 **Upcoming and Future Tasks**
-*   **P0: Implement Dynamic Question Categories:**
-    *   **Task:** Modify the question-loading mechanism to support dynamic, club-specific categories (e.g., 'Manchester United-history').
-    *   **Files:**  (will need restructuring or replacement),  (game logic for fetching questions).
-    *   **Goal:** Increase question variety as requested by the user.
-
-*   **P0: Develop Skill-Based Matchmaking Logic:**
-    *   **Task:** Create a new backend endpoint and logic in  to match users with opponents who have a similar . This will likely involve creating a matchmaking queue or pool.
-    *   **Files:** .
-    *   **Goal:** Build the core of the adaptive matchmaking system.
-
-*   **P0: Implement Dynamic Ball Knowledge Score Updates:**
-    *   **Task:** Create backend logic to adjust a user's  after a match is completed. The adjustment should be based on the result (win/loss) and the  difference between the two players (i.e., an ELO-like system).
-    *   **Files:**  (logic to be triggered at game completion),  (if any changes to the  model are needed).
-    *   **Goal:** Make the Ball Knowledge score a meaningful representation of user skill.
-
-*   **P1: Implement Matchmaking Frontend UI:**
-    *   **Task:** Update the frontend to include a UI for users to enter the matchmaking queue.
-    *   **Files:**  or .
-    *   **Goal:** Allow users to access the new matchmaking feature.
+*   **Upcoming Tasks:**
+    *   **(P1) Club-Specific Leaderboards:** Create leaderboards filtered by club to enhance the Club Challenge mode.
+*   **Future Tasks:**
+    *   **(P2) Club Mastery Badges:** Award users with badges for achieving milestones within their favorite club's challenges.
+    *   **(P2) Full Social OAuth:** Integrate Google and other social login providers to simplify the registration and login process.
 
 **Completed work in this session**
-- **Bug Fix (Multi-round Bot Game):** Resolved an issue where the first question of the second round was unanswerable. The fix involved resetting component state (, ) between rounds in .
-- **GDPR Consent:** Added a GDPR-compliant marketing opt-in checkbox to the onboarding screen () and updated the  model () and backend to store the consent.
-- **Onboarding Overhaul:**
-    - Replaced native HTML dropdowns with custom Shadcn  components to fix a rendering bug in .
-    - Updated club selection with a comprehensive list of teams from Premier League, Bundesliga, Ligue 1, and Serie A ().
-    - Made country, age, and phone number mandatory fields with backend validation.
-    - Updated user avatars to be more person-like footballer variations.
-- **Gameplay Timers & Playback:** Implemented a 3-hour turn timer for player-vs-player games, a 45-second turn for bot games, and a feature to watch a playback of the opponent's answers ().
-- **Stripe & Club Wars Integration:** Added Stripe integration for payments (, ) and a Club Wars weekly competition feature (, ).
-- **Core Features Implemented:** Avatar uploads, a full league system with leaderboards, and a Your Rank component showing global/club/country rankings.
+- **Feature: Skill-Based Matchmaking & ELO Score:** Implemented a full matchmaking queue ( model) and ELO-like skill updates in  and , with a corresponding UI in .
+- **Feature: Unified 'Club' Category & Club Challenge:** Consolidated all club-related questions into a single category and updated  to filter questions for the 'Club Challenge' based on the user's favorite team. The frontend at  was updated to auto-select the category for this mode.
+- **Feature: Massive Question Database Expansion:** Generated and inserted over 3,700 club-specific questions into the database using new scripts ().
+- **Bug Fix: Answer Distribution:** Investigated a user report of skewed answers, confirmed the data was correctly distributed in the database, and re-shuffled all questions to improve perceived randomness.
+- **Bug Fix: App Crash on Answer Submission:** Diagnosed and fixed a critical  error by preventing the creation of duplicate  entries in .
 
 **Earlier issues found/mentioned but not fixed**
-None.
+*   **Issue 1: Duplicate Answer Options in Questions**
+    *   A test report noted that some generated questions have duplicate options (e.g., the same club appearing as two different choices). This is a low-priority cosmetic issue.
+    *   **Debug checklist:** Review the question generation logic in  to ensure distractor options are unique and different from the correct answer.
+    *   **Why to solve this issue and what will be achieved with this?** Improves question quality and provides a better user experience.
+    *   **Should Test frontend/backend/both after fix:** Backend (by running a script to scan the database for questions with non-unique options).
+    *   **Is recurring issue?** Y
 
 **Known issue recurrence from previous fork**
-None.
+- None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
 -   **Frontend:** React, Vite, TailwindCSS, Shadcn UI
--   **Backend:** Python, Flask, SQLAlchemy
--   **Database:** SQLite
+-   **Backend:** Python, FastAPI, SQLAlchemy (Async)
+-   **Database:** PostgreSQL
 -   **Authentication:** JWT (JSON Web Tokens)
+-   **ORM Migrations:** Alembic
 
 **key DB schema**
--   : uid=0(root) gid=0(root) groups=0(root), , , ,  (integer),  (string),  (string),  (integer),  (string),  (string),  (boolean).
--   : uid=0(root) gid=0(root) groups=0(root), , , , , , , ,  (JSON),  (JSON),  (boolean),  (datetime).
--   : uid=0(root) gid=0(root) groups=0(root), , , , , .
--   : uid=0(root) gid=0(root) groups=0(root), ,  (JSON).
+-   : uid=0(root) gid=0(root) groups=0(root), , , ,  (integer),  (string).
+-   : uid=0(root) gid=0(root) groups=0(root), , , , , , , .
 -   : uid=0(root) gid=0(root) groups=0(root), , , , .
+-   : uid=0(root) gid=0(root) groups=0(root), , , , , .
+-   : uid=0(root) gid=0(root) groups=0(root), , , .
+
+**changes in tech stack**
+- The database was migrated from SQLite to **PostgreSQL**. The backend now uses asynchronous database drivers () and SQLAlchemy's async capabilities.
 
 **All files of reference**
--   : This file contains the current question bank and will need to be restructured or re-interpreted to fulfill the user's request for more variety.
--   : The main backend file where all new matchmaking and score update logic will be implemented.
--   : Contains the  model, where the  is stored.
--    / : These are the likely frontend locations for the new matchmaking UI.
+-   : The monolithic FastAPI file containing all game logic, matchmaking endpoints, and the recent crash fix.
+-   : Defines all SQLAlchemy database models, including the new .
+-   : The main game component, which was updated to handle the 'Club Challenge' flow.
+-   : The frontend component for the new ranked matchmaking feature.
+-   : A test file created by the testing agent for the matchmaking feature.
+-   : The primary log file for diagnosing backend errors.
 
-**Areas that need refactoring**
--   **Monolithic Backend:**  contains all application logic (auth, user, game, leagues, payments). It should be broken down into smaller, more manageable Flask Blueprints (e.g., , ).
--   **Static Question Data:** The question system relies on a single  file. Migrating this to a dedicated  table in the database would be more scalable and allow for easier management of dynamic, club-specific categories.
+**Areas that need refactoring**:
+-   **Monolithic Backend ():** This file has grown to over 1700 lines and contains all application logic. It should be broken down into smaller, more manageable FastAPI routers (e.g., , ).
+-   **Data Seeding Scripts:** There are multiple one-off scripts for generating questions. These should be consolidated into a single, configurable data management utility for seeding and maintaining the question database.
 
 **key api endpoints**
--   
--   
--   
--   
--   
--   
--   
--   
--   
--   
+-   : Adds a user to the ranked matchmaking queue.
+-   : Removes a user from the queue.
+-   : Polls the user's status in the queue.
+-   : (Modified) Selects a category for a game round; logic was added to prevent duplicate round creation.
+-   : (Modified) Submits an answer; logic was updated to prevent crashes and trigger ELO score calculations.
 
 **Critical Info for New Agent**
--   You are starting a brand-new feature implementation. The previous agent only performed initial investigation.
--   The matchmaking and skill-score systems must be built from the ground up. There is no existing code for this.
--   The Ball Knowledge score is stored as  in the  table.
--   The two main goals are **question variety** and **skill-based matchmaking**. These are your highest priority tasks.
+-   Your immediate priority is to verify with the user that the app crash bug is resolved. The fix has been implemented but awaits user confirmation.
+-   The application's database is **PostgreSQL**, not SQLite. All database operations in  are asynchronous.
+-   The crash was caused by a  error due to duplicate  records. The fix involves a get-or-create pattern. Be prepared to investigate this area again if the user reports the crash persists.
 
 **documents and test reports created in this job**
 -   
+-   
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
--    - **(PENDING)** This is the current and main task to be worked on.
--    - **(RESOLVED)** User reported a bug that was successfully fixed.
+-    - **(FIX PENDING VERIFICATION)** User reported the critical crash bug that was just fixed.
+-    - **(RESOLVED)** User reported an answer distribution issue; agent investigated and confirmed randomness.
+-    - **(RESOLVED)** User requested a massive expansion of the question database, which was completed.
+-    - **(RESOLVED)** User requested to consolidate club questions and update the Club Challenge mode.
 
 **Project Health Check:**
--   **Broken:** None
--   **Mocked:** Social login buttons (Google, Facebook, etc.) are UI-only and do not have functional backend implementations.
+-   **Broken:** None. A critical bug has a fix applied and is awaiting user verification.
+-   **Mocked:** Social login buttons on the frontend are UI-only and not functional.
 
 **3rd Party Integrations**
--   **Stripe (Payments):** Integrated for handling payments. Requires a User API Key ().
--   **DiceBear (Avatars):** Used to generate SVG avatars. Does not require a key.
+-   **Stripe (Payments):** Integrated for in-app purchases.
+-   **DiceBear (Avatars):** Used for generating user avatars.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES
+-   **Testing agent used after significant changes:** YES (for matchmaking and club challenge features).
 -   **Troubleshoot agent used after agent stuck in loop:** NO
--   **Test files created:** None
+-   **Test files created:** []
 -   **Known regressions:** None
 
 **Credentials to test flow:**
-New users can be registered via the UI. Previous tests used credentials like  with the password .
+-   Register a new user via the UI.
+-   A user with favorite club 'Arsenal' was created for testing:  / .
+-   A user for matchmaking tests was created:  / .
 
 **What agent forgot to execute**
-Nothing. All previous tasks and bug fixes have been completed. The current task is new.</analysis>
+The agent acted comprehensively on all user requests. While a more thorough regression test could have been run after the final bug fix, the manual testing performed was a reasonable and successful verification step.</analysis>
