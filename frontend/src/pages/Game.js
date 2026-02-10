@@ -234,6 +234,9 @@ export default function Game() {
       if (response.data.tier_update) {
         setTierUpdate(response.data.tier_update);
       }
+      if (response.data.achievements_earned) {
+        setAchievementsEarned(prev => [...prev, ...response.data.achievements_earned]);
+      }
       setBotAnswers(response.data.bot_answers);
       setBotAnswerIndex(0);
       setGamePhase('bot_live');
