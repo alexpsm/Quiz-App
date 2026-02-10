@@ -256,7 +256,11 @@ async def update_ball_knowledge(db: AsyncSession, game: Game, user: User):
 
     new_rank = max(100, user_rank + delta)
     user.skill_rank = new_rank
-    return old_rank, new_rank, delta
+
+    # Update player tier based on game score
+    tier_update = await update_player_tier(user, user_score)
+
+    return old_rank, new_rank, delta, tier_update
 
 async def get_current_user(db: AsyncSession = Depends(get_db), session_token: Optional[str] = Cookie(None), authorization: Optional[str] = Header(None)) -> User:
     token = session_token
