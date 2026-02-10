@@ -361,6 +361,9 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+        
+        {/* Unobtrusive ad at bottom of dashboard */}
+        <AdBanner type="polymarket" size="sm" className="mt-6" />
       </div>
     </Layout>
   );
