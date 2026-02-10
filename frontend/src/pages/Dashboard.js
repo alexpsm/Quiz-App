@@ -72,9 +72,14 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-3">
             <TieredAvatar src={user?.avatar} alt={user?.username} tier={user?.player_tier || 1} size="md" />
-            <div className="flex items-center gap-2 bg-card border-2 border-neon-yellow/50 rounded-lg px-4 py-2 shadow-neon-yellow">
-              <Brain className="text-neon-yellow" size={20} />
-              <span className="text-2xl font-black tracking-tighter text-neon-yellow">{user?.skill_rank || 1000}</span>
+            <div className="bg-card border-2 border-neon-yellow/50 rounded-lg px-4 py-2 shadow-neon-yellow">
+              <div className="flex items-center gap-2">
+                <Brain className="text-neon-yellow" size={20} />
+                <span className="text-2xl font-black tracking-tighter text-neon-yellow">{user?.skill_rank || 1000}</span>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-0.5">
+                My <span className="font-extrabold tracking-tight uppercase text-neon-yellow">Ball Knowledge</span>
+              </p>
             </div>
           </div>
         </div>
