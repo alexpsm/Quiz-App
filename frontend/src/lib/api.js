@@ -55,6 +55,7 @@ export const games = {
   get: (gameId) => api.get(`/games/${gameId}`),
   selectCategory: (gameId, category) => api.post(`/games/${gameId}/select-category`, null, { params: { category } }),
   submitAnswer: (gameId, data) => api.post(`/games/${gameId}/answer`, data),
+  botPlay: (gameId) => api.post(`/games/${gameId}/bot-play`),
 };
 
 export const leagues = {
