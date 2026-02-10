@@ -225,6 +225,11 @@ export default function Challenge() {
                 Join Game
               </button>
             </div>
+            
+            {/* Ad between sections */}
+            <div className="flex justify-center mt-4">
+              <InlineAd type="polymarket" />
+            </div>
           </div>
         )}
       </div>
