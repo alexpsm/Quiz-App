@@ -371,7 +371,7 @@ export default function Game() {
               <ArrowLeft size={24} />
             </button>
             <span className="text-sm text-gray-400 uppercase tracking-wider font-bold">Round {game.current_round}/6</span>
-            <PoweredByScore90 size="xs" />
+            <PoweredByScore90 size="xs" variant="minimal" />
           </div>
 
           <div className="flex items-center justify-between">
