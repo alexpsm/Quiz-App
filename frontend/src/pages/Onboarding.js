@@ -142,7 +142,7 @@ export default function Onboarding() {
           </h1>
           <PoweredByScore90 size="md" variant="neon" className="justify-center mb-3" />
           <p className="text-base text-gray-300">
-            Prove your <span className="text-neon-yellow font-bold">Ball Knowledge</span>
+            Prove your <span className="text-xl font-extrabold tracking-tighter uppercase text-neon-yellow drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]">Ball Knowledge</span>
           </p>
         </div>
 
