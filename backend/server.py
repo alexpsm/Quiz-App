@@ -1347,6 +1347,7 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
             else:
                 game.current_round += 1
                 game.turn_player_id = game.player1_id
+                game.turn_started_at = datetime.now(timezone.utc)
     
     # Special handling for club challenge single-player mode
     if game.player1_id == game.player2_id and is_correct:
