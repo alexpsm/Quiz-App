@@ -50,23 +50,17 @@ Build a cross-platform, mobile-first web app called "QuizBall" — a football tr
 - [x] Ad space placeholder
 
 ### V3 Adaptive Matchmaking & Club Questions (December 2025)
-- [x] **Unified 'Club' Category** — Single "Club" category replaces 68+ club-specific subcategories
-- [x] **869 Club Questions** — Covers all 96 clubs from 5 leagues (Premier League, Bundesliga, La Liga, Serie A, Ligue 1)
-- [x] **Question Types:** nickname, stadium, city, founded year, colors, league, reverse questions
-- [x] **Club Challenge Mode Enhancement** — Auto-selects "Club" category, filters questions by user's favorite club
-- [x] **18 Total Categories** — Reduced from 85+ to streamlined 18 categories
-- [x] **Skill-Based Matchmaking Queue** — New MatchmakingQueue table with skill_rank matching
+- [x] **Unified 'Club' Category** — Single "Club" category containing 3717 questions
+- [x] **Complete Club Coverage** — All 96 clubs from 5 leagues (Premier League, Bundesliga, La Liga, Serie A, Ligue 1)
+- [x] **~30-40 Questions Per Club** — Including: nickname, stadium, city, founded, colors, league, legendary players, current players, managers, rivals, derbies, top scorers, trophies, kit sponsors
+- [x] **Club Challenge Mode** — Auto-selects "Club" category, filters questions by user's favorite club
+- [x] **Player Questions** — Legendary players (5 per club) + current players (5 per club) 
+- [x] **Manager Questions** — 3 per club with career history
+- [x] **Skill-Based Matchmaking Queue** — MatchmakingQueue table with skill_rank matching
 - [x] **ELO-Like Ranking System** — skill_rank updates after ranked (non-bot) games
-  - K-factor: 32
-  - Score bonus: up to 10 extra points based on score difference
-  - Minimum rank: 100
-- [x] **Matchmaking Endpoints:**
-  - POST /api/matchmaking/join — Join queue with skill_rank
-  - GET /api/matchmaking/status — Returns waiting/matched status with queue stats
-  - DELETE /api/matchmaking/leave — Leave queue
-  - POST /api/matchmaking/bot-fallback — Play bot when no opponent found
-- [x] **Dynamic Skill Range Expansion** — Starts at ±150, expands by 50 every 15s up to ±500
-- [x] **Frontend Ranked Match UI** — Shows skill rank, wait time, skill range, queue count, cancel button
+- [x] **Matchmaking Endpoints:** join, status, leave, bot-fallback
+- [x] **Dynamic Skill Range Expansion** — Starts at ±150, expands to ±500
+- [x] **Frontend Ranked Match UI** — Real-time search status
 
 ## Pending (Backlog)
 - [ ] Full Facebook/X/Apple OAuth (needs developer credentials)
