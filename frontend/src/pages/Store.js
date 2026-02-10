@@ -398,6 +398,49 @@ export default function Store() {
           </button>
         </div>
 
+        {/* Prize Draws Section */}
+        <div className="space-y-4" data-testid="prize-draws-section">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold uppercase tracking-tight text-white flex items-center gap-2">
+                <Trophy className="text-neon-yellow" size={24} />
+                Prize Draws
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">Spend credits for a chance to win amazing prizes</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-400">Your Tier</p>
+              <p className="text-lg font-black text-neon-blue">{userTier}</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            {PRIZE_DRAWS.map((draw, index) => (
+              <motion.div
+                key={draw.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <PrizeDrawCard 
+                  draw={draw}
+                  userTier={userTier}
+                  userCredits={userCredits}
+                  onEnter={handleEnterDraw}
+                />
+              </motion.div>
+            ))}
+          </div>
+          
+          {/* Info box */}
+          <div className="bg-black/30 border border-white/10 rounded-lg p-4">
+            <p className="text-xs text-gray-400 text-center">
+              <span className="text-neon-yellow font-bold">How it works:</span> Each credit spent = 1 entry. 
+              Higher tier requirements = better odds. Winners drawn at countdown end.
+            </p>
+          </div>
+        </div>
+
         {/* Banner Ad Placeholder */}
         <div className="bg-gray-900/50 border-2 border-gray-700 rounded-lg p-8 text-center backdrop-blur-sm">
           <p className="text-sm text-gray-500 uppercase tracking-wider">Ad Space</p>
