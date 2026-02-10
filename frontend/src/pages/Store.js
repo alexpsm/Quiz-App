@@ -443,11 +443,8 @@ export default function Store() {
           </div>
         </div>
 
-        {/* Banner Ad Placeholder */}
-        <div className="bg-gray-900/50 border-2 border-gray-700 rounded-lg p-8 text-center backdrop-blur-sm">
-          <p className="text-sm text-gray-500 uppercase tracking-wider">Ad Space</p>
-          <p className="text-xs text-gray-600 mt-1">Banner advertisement</p>
-        </div>
+        {/* Google AdSense Sports Ad */}
+        <GoogleSportsAd className="mt-2" />
       </div>
     </Layout>
   );
