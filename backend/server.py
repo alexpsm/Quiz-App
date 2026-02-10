@@ -1579,7 +1579,7 @@ CREDIT_PACKAGES = {
     "credits_100": {"amount": 0.99, "credits": 100, "label": "100 Credits"},
     "credits_500": {"amount": 3.99, "credits": 500, "label": "500 Credits"},
     "credits_1000": {"amount": 6.99, "credits": 1000, "label": "1000 Credits"},
-    "premium": {"amount": 4.99, "credits": 0, "label": "Premium (Ad-Free)", "is_premium": True},
+    "premium": {"amount": 0.99, "credits": 0, "label": "Premium (Ad-Free)", "is_premium": True},
 }
 
 class CheckoutRequest(BaseModel):

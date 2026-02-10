@@ -192,8 +192,8 @@ export default function Store() {
           </div>
           
           <div className="text-center mb-6">
-            <p className="text-4xl font-black tracking-tighter text-neon-yellow">$4.99</p>
-            <p className="text-xs text-gray-300 mt-1">One-time purchase</p>
+            <p className="text-4xl font-black tracking-tighter text-neon-yellow">$0.99</p>
+            <p className="text-xs text-gray-300 mt-1">per month</p>
           </div>
           
           <button
