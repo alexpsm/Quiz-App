@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Instagram, ExternalLink } from 'lucide-react';
 
 // Real Score90 Instagram post IDs
@@ -26,42 +26,62 @@ const SCORE90_POSTS = [
   },
 ];
 
-// Load Instagram embed script
+// Load Instagram embed script once
 const loadInstagramEmbed = () => {
-  if (window.instgrm) {
-    window.instgrm.Embeds.process();
-    return;
-  }
-  
-  if (!document.getElementById('instagram-embed-script')) {
-    const script = document.createElement('script');
-    script.id = 'instagram-embed-script';
-    script.src = '//www.instagram.com/embed.js';
-    script.async = true;
-    document.body.appendChild(script);
-  }
+  return new Promise((resolve) => {
+    if (window.instgrm) {
+      resolve(window.instgrm);
+      return;
+    }
+    
+    if (!document.getElementById('instagram-embed-script')) {
+      const script = document.createElement('script');
+      script.id = 'instagram-embed-script';
+      script.src = '//www.instagram.com/embed.js';
+      script.async = true;
+      script.onload = () => {
+        // Wait a bit for instgrm to initialize
+        setTimeout(() => resolve(window.instgrm), 100);
+      };
+      document.body.appendChild(script);
+    } else {
+      // Script exists but not loaded yet, poll for it
+      const checkInterval = setInterval(() => {
+        if (window.instgrm) {
+          clearInterval(checkInterval);
+          resolve(window.instgrm);
+        }
+      }, 100);
+    }
+  });
 };
 
 export function InstagramCarousel({ autoPlay = true, interval = 5000 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [embedLoaded, setEmbedLoaded] = useState({});
+  const [embedsReady, setEmbedsReady] = useState(false);
   const timerRef = useRef(null);
+  const containerRef = useRef(null);
 
-  // Load Instagram embed script on mount
+  // Load Instagram embed script and process all embeds on mount
   useEffect(() => {
-    loadInstagramEmbed();
-  }, []);
-
-  // Process embeds when index changes
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (window.instgrm) {
-        window.instgrm.Embeds.process();
+    let mounted = true;
+    
+    const initEmbeds = async () => {
+      const instgrm = await loadInstagramEmbed();
+      if (mounted && instgrm) {
+        // Process all embeds
+        instgrm.Embeds.process();
+        setEmbedsReady(true);
       }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [currentIndex]);
+    };
+    
+    initEmbeds();
+    
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Auto-advance carousel
   useEffect(() => {
@@ -90,8 +110,6 @@ export function InstagramCarousel({ autoPlay = true, interval = 5000 }) {
   const goNext = () => goTo((currentIndex + 1) % SCORE90_POSTS.length);
   const goPrev = () => goTo((currentIndex - 1 + SCORE90_POSTS.length) % SCORE90_POSTS.length);
 
-  const currentPost = SCORE90_POSTS[currentIndex];
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -101,6 +119,7 @@ export function InstagramCarousel({ autoPlay = true, interval = 5000 }) {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       data-testid="instagram-carousel"
+      ref={containerRef}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
@@ -123,22 +142,22 @@ export function InstagramCarousel({ autoPlay = true, interval = 5000 }) {
         </a>
       </div>
 
-      {/* Embed Container */}
-      <div className="relative overflow-hidden bg-white" style={{ minHeight: '300px' }}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentPost.id}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.3 }}
-            className="w-full"
+      {/* All Embeds Container - render all, show one */}
+      <div className="relative overflow-hidden bg-white" style={{ minHeight: '320px' }}>
+        {SCORE90_POSTS.map((post, idx) => (
+          <div
+            key={post.id}
+            className="absolute inset-0 transition-opacity duration-300"
+            style={{
+              opacity: idx === currentIndex ? 1 : 0,
+              pointerEvents: idx === currentIndex ? 'auto' : 'none',
+              zIndex: idx === currentIndex ? 1 : 0,
+            }}
           >
-            {/* Instagram Native Embed */}
             <blockquote 
               className="instagram-media" 
               data-instgrm-captioned
-              data-instgrm-permalink={currentPost.postUrl}
+              data-instgrm-permalink={post.postUrl}
               data-instgrm-version="14"
               style={{
                 background: '#FFF',
@@ -154,7 +173,7 @@ export function InstagramCarousel({ autoPlay = true, interval = 5000 }) {
             >
               <div style={{ padding: '16px' }}>
                 <a 
-                  href={currentPost.postUrl}
+                  href={post.postUrl}
                   style={{ 
                     background: '#FFFFFF', 
                     lineHeight: 0, 
@@ -222,27 +241,27 @@ export function InstagramCarousel({ autoPlay = true, interval = 5000 }) {
                 </a>
               </div>
             </blockquote>
-          </motion.div>
-        </AnimatePresence>
+          </div>
+        ))}
 
         {/* Navigation Arrows */}
         <button
-          onClick={(e) => { e.preventDefault(); goPrev(); }}
-          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-colors z-10"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); goPrev(); }}
+          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-colors z-20"
           data-testid="carousel-prev"
         >
           <ChevronLeft size={18} />
         </button>
         <button
-          onClick={(e) => { e.preventDefault(); goNext(); }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-colors z-10"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); goNext(); }}
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-colors z-20"
           data-testid="carousel-next"
         >
           <ChevronRight size={18} />
         </button>
 
         {/* Progress Bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30 z-10">
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30 z-20">
           <motion.div
             className="h-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600"
             initial={{ width: '0%' }}
