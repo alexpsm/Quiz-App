@@ -82,8 +82,10 @@ Build a cross-platform, mobile-first web app called "QuizBall" — a football tr
 - GET /api/matchmaking/status — Check matchmaking status
 - DELETE /api/matchmaking/leave — Leave matchmaking queue
 - POST /api/matchmaking/bot-fallback — Accept bot match
-- GET /api/questions/categories — Returns 86+ categories including club-specific
+- POST /api/games/club-challenge — Start Club Challenge (questions filtered by user's favorite club)
+- GET /api/questions/categories — Returns 18 categories including unified "Club"
 
 ## Database Schema Updates (V3)
 - **MatchmakingQueue table:** id, user_id, skill_rank, joined_at, status
 - Indexes: idx_matchmaking_skill, idx_matchmaking_status_skill
+- **Questions table:** "Club" category contains 869 questions for 96 clubs
