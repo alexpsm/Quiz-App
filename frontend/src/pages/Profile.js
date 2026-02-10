@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Target, LogOut, Trophy, Clock, Globe, Calendar, Shield, Camera, ChevronDown, ChevronUp } from 'lucide-react';
+import { Brain, Target, LogOut, Trophy, Clock, Globe, Calendar, Shield, Camera, ChevronDown, ChevronUp, Award, Star, Flame, Zap, Medal, Crown, TrendingUp, Flag, Home, RefreshCw, Play, Gamepad2, Heart } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { TieredAvatar } from '../components/TieredAvatar';
 import { useAuth } from '../context/AuthContext';
 import { PoweredByScore90 } from '../components/Score90Logo';
-import { users, games } from '../lib/api';
+import { users, games, achievements } from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
