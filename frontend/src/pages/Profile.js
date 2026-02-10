@@ -245,7 +245,7 @@ export default function Profile() {
                   }`}>
                     {index + 1}
                   </div>
-                  <img src={player.avatar} alt={player.username} className="w-10 h-10 rounded-full border-2 border-neon-blue/30" />
+                  <TieredAvatar src={player.avatar} alt={player.username} tier={player.player_tier || 1} size="sm" />
                   <div className="flex-1">
                     <p className="font-bold text-white">@{player.username}</p>
                   </div>
