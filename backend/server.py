@@ -1702,6 +1702,7 @@ async def bot_play(game_id: str, current_user: User = Depends(get_current_user),
     
     # Advance game
     credits_won = 0
+    achievements_earned = []
     if game.current_round >= 6:
         total_p1 = sum(r.player1_score for r in game.rounds)
         total_p2 = sum(r.player2_score for r in game.rounds)
@@ -1725,6 +1726,9 @@ async def bot_play(game_id: str, current_user: User = Depends(get_current_user),
         
         # Update Ball Knowledge score
         old_rank, new_rank, delta, tier_update = await update_ball_knowledge(db, game, current_user)
+        
+        # Check for achievements
+        achievements_earned = await check_and_award_achievements(db, current_user, game)
     else:
         game.current_round += 1
         game.turn_player_id = game.player1_id
@@ -1741,6 +1745,7 @@ async def bot_play(game_id: str, current_user: User = Depends(get_current_user),
         "ball_knowledge_update": {"old": old_rank, "new": new_rank, "delta": delta} if delta is not None else None,
         "credits_won": credits_won if credits_won > 0 else None,
         "tier_update": tier_update,
+        "achievements_earned": achievements_earned if achievements_earned else None,
     }
 
 @api_router.post("/games/{game_id}/select-category")
