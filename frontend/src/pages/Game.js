@@ -685,6 +685,30 @@ export default function Game() {
                     )}
                   </motion.div>
                 )}
+                {achievementsEarned.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.9 }}
+                    className="bg-card border-2 border-neon-pink/50 rounded-lg p-5"
+                    data-testid="achievements-earned"
+                  >
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">🏆 Achievements Unlocked!</p>
+                    <div className="space-y-2">
+                      {achievementsEarned.map((ach, idx) => (
+                        <div key={ach.id || idx} className="flex items-center gap-3 bg-black/30 rounded-lg p-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neon-pink to-neon-yellow flex items-center justify-center">
+                            <Trophy size={20} className="text-white" />
+                          </div>
+                          <div className="flex-1 text-left">
+                            <p className="text-sm font-bold text-white">{ach.name}</p>
+                            <p className="text-xs text-gray-400">{ach.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
                 <button onClick={() => navigate('/dashboard')} data-testid="return-dashboard-btn"
                   className="bg-gradient-to-r from-neon-blue to-neon-pink hover:from-neon-pink hover:to-neon-yellow h-12 px-8 rounded-sm font-bold uppercase tracking-wider shadow-neon-blue hover:shadow-neon-pink transition-all active:scale-95 text-white">
                   Return to Dashboard
