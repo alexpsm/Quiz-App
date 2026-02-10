@@ -82,8 +82,14 @@ export default function Game() {
           setFeedback(null);
           setCurrentQuestions([]);
           setCurrentQuestionIndex(0);
-          loadCategories();
-          setGamePhase('category_selection');
+          
+          // For Club Challenge mode, auto-select "Club" category
+          if (g.status === 'club_challenge') {
+            handleCategorySelect('Club');
+          } else {
+            loadCategories();
+            setGamePhase('category_selection');
+          }
         }
       }
     } catch (error) {
