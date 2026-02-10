@@ -191,6 +191,67 @@ export default function Profile() {
           </div>
         )}
 
+        {/* Achievements Section */}
+        <div>
+          <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-3 flex items-center gap-2">
+            <Award size={20} className="text-neon-pink" />
+            Achievements
+            <span className="text-sm font-normal text-gray-500">
+              ({userAchievements.total_earned}/{userAchievements.total_available})
+            </span>
+          </h3>
+          
+          {userAchievements.earned.length === 0 ? (
+            <div className="bg-card border-2 border-white/10 rounded-lg p-6 text-center">
+              <Award size={32} className="text-gray-600 mx-auto mb-2" />
+              <p className="text-gray-400">No achievements yet</p>
+              <p className="text-sm text-gray-500 mt-1">Play games to earn badges!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {userAchievements.earned.slice(0, showAllAchievements ? 12 : 6).map((achievement) => {
+                const IconComponent = iconMap[achievement.icon] || Award;
+                const categoryColors = {
+                  milestone: 'from-neon-blue to-cyan-400 border-neon-blue/50',
+                  streak: 'from-orange-500 to-red-500 border-orange-500/50',
+                  skill: 'from-neon-yellow to-orange-400 border-neon-yellow/50',
+                  rating: 'from-purple-500 to-pink-500 border-purple-500/50',
+                  challenge: 'from-green-500 to-emerald-400 border-green-500/50',
+                  club: 'from-neon-pink to-rose-500 border-neon-pink/50',
+                  special: 'from-amber-400 to-yellow-300 border-amber-400/50',
+                };
+                const colorClass = categoryColors[achievement.category] || categoryColors.milestone;
+                
+                return (
+                  <motion.div
+                    key={achievement.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className={`bg-card border-2 ${colorClass.split(' ')[2]} rounded-lg p-3 text-center hover:scale-105 transition-transform`}
+                    data-testid={`achievement-${achievement.id}`}
+                    title={achievement.description}
+                  >
+                    <div className={`w-10 h-10 mx-auto rounded-full bg-gradient-to-br ${colorClass.split(' ').slice(0, 2).join(' ')} flex items-center justify-center shadow-lg`}>
+                      <IconComponent size={20} className="text-white" />
+                    </div>
+                    <p className="text-xs font-bold text-white mt-2 truncate">{achievement.name}</p>
+                    <p className="text-[9px] text-gray-500 truncate">{achievement.description}</p>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+          {userAchievements.earned.length > 6 && (
+            <button
+              onClick={() => setShowAllAchievements(!showAllAchievements)}
+              data-testid="toggle-achievements-btn"
+              className="w-full py-2 mt-2 text-sm font-bold uppercase tracking-wider text-neon-blue hover:text-neon-pink transition-colors flex items-center justify-center gap-1"
+            >
+              {showAllAchievements ? <><ChevronUp size={16} /> Show Less</> : <><ChevronDown size={16} /> Show All ({userAchievements.earned.length})</>}
+            </button>
+          )}
+        </div>
+
         {/* Game History */}
         <div>
           <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-4 flex items-center gap-2">
