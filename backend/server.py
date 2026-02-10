@@ -852,13 +852,21 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
     categories = [row[0] for row in result.all()]
     return categories
 
-@api_router.get("/questions/random-clubs")
-async def get_random_clubs():
-    """Return 3 random club names for category selection"""
+@api_router.get("/questions/random-categories")
+async def get_random_categories(db: AsyncSession = Depends(get_db)):
+    """Return 3 random categories — a mix of club names and regular topics"""
     import random
     from clubs_data import get_all_clubs
+
+    # Get non-Club topic categories that have questions
+    result = await db.execute(select(Question.category).where(Question.category != "Club").distinct())
+    topics = [row[0] for row in result.all()]
+
     clubs = get_all_clubs()
-    return random.sample(clubs, min(3, len(clubs)))
+
+    # Build a pool: all topics + all clubs, then pick 3 unique
+    pool = topics + clubs
+    return random.sample(pool, min(3, len(pool)))
 
 # Game Endpoints
 BOT_USERNAME = "TheScore90Bot"
