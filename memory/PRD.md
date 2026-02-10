@@ -1,85 +1,61 @@
 # QuizBall - Product Requirements Document
 
 ## Original Problem Statement
-Build a cross-platform, mobile-first web app called "QuizBall" — a football trivia game similar to QuizDuel, with Score90 social media branding.
+QuizBall is a football quiz game application with user registration, single-player modes, leagues, and leaderboards. Users wanted greater question variety with club-specific categories and an adaptive matchmaking system based on a "Ball Knowledge" skill score.
+
+## Core Features (Implemented)
+- **Authentication:** Email/password + Emergent Google OAuth
+- **Game Modes:** Quick Play (vs bot), Club Challenge (solo), Invite Friend, Ranked Matchmaking
+- **Question System:** 3700+ questions, primarily in "Club" category
+- **Skill System:** ELO-based skill ranking (Ball Knowledge score)
+- **Leagues:** Public/private leagues with leaderboards
+- **Club Wars:** Weekly club competition
+- **Payments:** Stripe checkout for credits/premium
+- **Profile:** Avatar upload, game history, ranks
 
 ## Tech Stack
-- **Frontend:** React, Tailwind CSS, Framer Motion, Lucide-React, Shadcn/UI
-- **Backend:** FastAPI, SQLAlchemy (async), PostgreSQL (Supabase), Alembic
-- **Auth:** Email/Password + Emergent-managed Google OAuth
-- **Payments:** Stripe (via emergentintegrations)
+- **Frontend:** React, Vite, TailwindCSS, Shadcn UI, Framer Motion
+- **Backend:** Python, FastAPI, SQLAlchemy (Async)
+- **Database:** PostgreSQL (Supabase)
+- **Auth:** JWT session tokens + cookies
 
-## All Implemented Features
+## Key Architecture
+- Backend: Monolithic server.py (~1900 lines) with all routes
+- Frontend: React SPA with pages (Dashboard, Game, Profile, Matchmaking, Onboarding)
+- API layer: /app/frontend/src/lib/api.js
 
-### V1 MVP
-- [x] Asynchronous 1v1 duels over 6 rounds, 3 questions per round
-- [x] Email/Google Auth, profile creation, category selection
-- [x] 20,000+ question database across football categories
-- [x] Matchmaking (random & friend invite)
-- [x] Club Challenge mode with club-specific leaderboards
-- [x] Admin panel for question management
+## What's Been Implemented
+- Full game flow: Quick Play (6 rounds, 3 questions each, vs bot)
+- Club Challenge: Solo mode with favorite club questions (6 rounds)
+- Ranked Matchmaking with ELO-based skill updates
+- Massive question database (3700+ questions)
+- Leaderboards (global, club, country)
+- Game history tracking
+- Stripe payments integration
+- Club Wars weekly competition
 
-### V2 Branding & UI
-- [x] Full UI Reskin with Score90 neon branding
-- [x] "Ball Knowledge" branding, "Powered by Score90" on every page
-- [x] Social auth buttons: Google (functional), Facebook, X, Apple (UI placeholders)
+## Bug Fixes (Dec 2025)
+1. **Club Challenge never finishing** - Fixed: Added is_solo check so rounds advance properly
+2. **correct_option not returned for wrong answers** - Fixed: Always return correct_option
+3. **Frontend "waiting" on reload mid-round** - Fixed: Resume questions from where left off
+4. **Timeout sending empty string** - Fixed: Sends 'X' as intentionally wrong
+5. **Category loading race condition** - Fixed: Await loadCategories before showing UI
+6. **Duplicate GameRound entries** - Fixed: Get-or-create pattern (previous session)
 
-### V2 Onboarding
-- [x] Required fields: Username, Favourite Club, Country (dropdown), Age (12-99 dropdown), Mobile Phone
-- [x] Football-themed person-like avatars + custom image upload
-- [x] GDPR marketing consent checkbox (opt-in)
-- [x] Club dropdown: Premier League, Bundesliga, Ligue 1, Serie A, La Liga
-- [x] Incomplete profiles redirect to onboarding
+## Upcoming Tasks (P1)
+- Club-Specific Leaderboards (filtered by club)
 
-### V2 Gameplay
-- [x] Quick Play vs TheScore90Bot
-- [x] **3-hour time limit per round** with visible countdown for real players
-- [x] **Bot plays in 45 seconds** with countdown and skip button
-- [x] **Live bot answering** — watch bot think and select answers in real-time
-- [x] **Opponent answer playback** — review how opponent answered each question
-- [x] Game History widget on Profile page
-
-### V2 Social & Leagues
-- [x] Full League System (create/join/leave public & private leagues by code)
-- [x] Social sharing (WhatsApp, Messenger, Instagram)
-- [x] "Your Rank" on Dashboard & Profile (Global, Club, Country, League)
-
-### V2 Store & Monetization
-- [x] Stripe Payment: Credit packages ($0.99/$3.99/$6.99) + Premium ($4.99)
-- [x] Weekly Club Wars (club vs club competition)
-- [x] Ad space placeholder
-
-### V3 Adaptive Matchmaking & Club Questions (December 2025)
-- [x] **Unified 'Club' Category** — Single "Club" category containing 3717 questions
-- [x] **Complete Club Coverage** — All 96 clubs from 5 leagues (Premier League, Bundesliga, La Liga, Serie A, Ligue 1)
-- [x] **~30-40 Questions Per Club** — Including: nickname, stadium, city, founded, colors, league, legendary players, current players, managers, rivals, derbies, top scorers, trophies, kit sponsors
-- [x] **Club Challenge Mode** — Auto-selects "Club" category, filters questions by user's favorite club
-- [x] **Player Questions** — Legendary players (5 per club) + current players (5 per club) 
-- [x] **Manager Questions** — 3 per club with career history
-- [x] **Skill-Based Matchmaking Queue** — MatchmakingQueue table with skill_rank matching
-- [x] **ELO-Like Ranking System** — skill_rank updates after ranked (non-bot) games
-- [x] **Matchmaking Endpoints:** join, status, leave, bot-fallback
-- [x] **Dynamic Skill Range Expansion** — Starts at ±150, expands to ±500
-- [x] **Frontend Ranked Match UI** — Real-time search status
-
-## Pending (Backlog)
-- [ ] Full Facebook/X/Apple OAuth (needs developer credentials)
-- [ ] Firebase analytics
-- [ ] More club-specific questions for remaining clubs
+## Future/Backlog Tasks (P2)
+- Club Mastery Badges
+- Full Social OAuth (Facebook, Twitter, Apple - currently mocked)
+- Clean up old sub-categories in DB
+- Fix duplicate answer options in generated questions
+- Refactor monolithic server.py into routers
+- Consolidate data seeding scripts
 
 ## Test Credentials
-- Test user: matchtest@test.com / Test123456
-- Admin: quizball_admin_2026
+- testuser@quizball.com / Test12345 (Manchester United fan)
+- matchtest@test.com / Test123456
 
-## Key API Endpoints
-- POST /api/matchmaking/join — Join skill-based matchmaking queue
-- GET /api/matchmaking/status — Check matchmaking status
-- DELETE /api/matchmaking/leave — Leave matchmaking queue
-- POST /api/matchmaking/bot-fallback — Accept bot match
-- POST /api/games/club-challenge — Start Club Challenge (questions filtered by user's favorite club)
-- GET /api/questions/categories — Returns 18 categories including unified "Club"
-
-## Database Schema Updates (V3)
-- **MatchmakingQueue table:** id, user_id, skill_rank, joined_at, status
-- Indexes: idx_matchmaking_skill, idx_matchmaking_status_skill
-- **Questions table:** "Club" category contains 869 questions for 96 clubs
+## Mocked Features
+- Social login buttons (Facebook, Twitter, Apple) are UI-only
