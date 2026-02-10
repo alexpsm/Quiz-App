@@ -180,6 +180,10 @@ export default function Store() {
   const [purchasing, setPurchasing] = useState('');
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [polling, setPolling] = useState(false);
+  const [enteringDraw, setEnteringDraw] = useState(null);
+
+  const userTier = user?.player_tier || 1;
+  const userCredits = user?.credits || 0;
 
   const pollPaymentStatus = useCallback(async (sessionId, attempts = 0) => {
     const maxAttempts = 8;
