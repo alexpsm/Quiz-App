@@ -118,6 +118,47 @@ def create_jwt_token(user_id: str) -> str:
 def generate_invite_code() -> str:
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
+
+def calculate_tier(total_points: int) -> int:
+    """Calculate player tier (1-100) from total game points.
+    Tier 1: 0 pts, Tier 2: 100 pts, scaling increases each tier.
+    Formula: tier N requires sum of (N-1)*100 points total.
+    Tier 10 ~= 4,500 pts, Tier 25 ~= 30,000, Tier 50 ~= 122,500, Tier 100 ~= 495,000
+    """
+    tier = 1
+    threshold = 0
+    for t in range(1, 101):
+        threshold += t * 100
+        if total_points < threshold:
+            break
+        tier = t + 1
+    return min(tier, 100)
+
+TIER_CREDIT_REWARDS = {
+    5: 10, 10: 25, 15: 40, 20: 60, 25: 100,
+    30: 120, 35: 150, 40: 200, 45: 250, 50: 500,
+    55: 300, 60: 350, 65: 400, 70: 500, 75: 750,
+    80: 600, 85: 700, 90: 800, 95: 900, 100: 2000,
+}
+
+async def update_player_tier(user, game_score: int) -> dict:
+    """Add game score to total, recalculate tier, award credits if tier up."""
+    old_tier = user.player_tier or 1
+    user.total_game_points = (user.total_game_points or 0) + game_score
+    new_tier = calculate_tier(user.total_game_points)
+    user.player_tier = new_tier
+
+    credits_awarded = 0
+    if new_tier > old_tier:
+        for t in range(old_tier + 1, new_tier + 1):
+            credits_awarded += TIER_CREDIT_REWARDS.get(t, t)  # default: tier number as credits
+        user.credits = (user.credits or 0) + credits_awarded
+
+    if new_tier != old_tier or credits_awarded:
+        return {"old_tier": old_tier, "new_tier": new_tier, "credits_awarded": credits_awarded}
+    return None
+
+
 def calculate_elo_change(player_rank: int, opponent_rank: int, winner_is_p1: bool, score_diff: int = 0) -> tuple:
     """
     Calculate ELO rating changes for both players after a match.
