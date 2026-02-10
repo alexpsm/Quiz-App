@@ -99,6 +99,12 @@ const AppRouter = () => {
         </ProtectedRoute>
       } />
       
+      <Route path="/challenge" element={
+        <ProtectedRoute>
+          <Challenge />
+        </ProtectedRoute>
+      } />
+      
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
