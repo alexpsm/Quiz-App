@@ -92,18 +92,15 @@ class TestGameRoundsAndAnswers:
         create_response = authenticated_session.post(f"{BASE_URL}/api/games/quick-play")
         game_id = create_response.json()["game_id"]
         
-        # Get categories
-        cat_response = authenticated_session.get(f"{BASE_URL}/api/questions/categories")
-        categories = cat_response.json()
-        assert len(categories) > 0, "No categories available"
-        category = categories[0]
+        # Use 'League' category which always has enough questions
+        category = "League"
         
         # Select category
         select_response = authenticated_session.post(
             f"{BASE_URL}/api/games/{game_id}/select-category",
             params={"category": category}
         )
-        assert select_response.status_code == 200
+        assert select_response.status_code == 200, f"Select category failed: {select_response.text}"
         questions = select_response.json()["questions"]
         
         return {"game_id": game_id, "questions": questions}
@@ -145,14 +142,14 @@ class TestGameRoundsAndAnswers:
         create_response = authenticated_session.post(f"{BASE_URL}/api/games/quick-play")
         game_id = create_response.json()["game_id"]
         
-        # Get categories and select one
-        cat_response = authenticated_session.get(f"{BASE_URL}/api/questions/categories")
-        category = cat_response.json()[0]
+        # Use 'League' category which always has enough questions
+        category = "League"
         
         select_response = authenticated_session.post(
             f"{BASE_URL}/api/games/{game_id}/select-category",
             params={"category": category}
         )
+        assert select_response.status_code == 200, f"Select category failed: {select_response.text}"
         questions = select_response.json()["questions"]
         
         # Verify it's player's turn initially
@@ -184,14 +181,14 @@ class TestBotPlayEndpoint:
         create_response = authenticated_session.post(f"{BASE_URL}/api/games/quick-play")
         game_id = create_response.json()["game_id"]
         
-        # Select category
-        cat_response = authenticated_session.get(f"{BASE_URL}/api/questions/categories")
-        category = cat_response.json()[0]
+        # Use 'League' category which always has enough questions
+        category = "League"
         
         select_response = authenticated_session.post(
             f"{BASE_URL}/api/games/{game_id}/select-category",
             params={"category": category}
         )
+        assert select_response.status_code == 200, f"Select category failed: {select_response.text}"
         questions = select_response.json()["questions"]
         
         # Answer all 3 questions to switch turn to bot
@@ -233,14 +230,14 @@ class TestBotPlayEndpoint:
         create_response = authenticated_session.post(f"{BASE_URL}/api/games/quick-play")
         game_id = create_response.json()["game_id"]
         
-        # Select category
-        cat_response = authenticated_session.get(f"{BASE_URL}/api/questions/categories")
-        category = cat_response.json()[0]
+        # Use 'League' category which always has enough questions
+        category = "League"
         
         select_response = authenticated_session.post(
             f"{BASE_URL}/api/games/{game_id}/select-category",
             params={"category": category}
         )
+        assert select_response.status_code == 200, f"Select category failed: {select_response.text}"
         questions = select_response.json()["questions"]
         
         # Get initial round
@@ -291,14 +288,14 @@ class TestOpponentAnswersPlayback:
         create_response = authenticated_session.post(f"{BASE_URL}/api/games/quick-play")
         game_id = create_response.json()["game_id"]
         
-        # Select category
-        cat_response = authenticated_session.get(f"{BASE_URL}/api/questions/categories")
-        category = cat_response.json()[0]
+        # Use 'League' category which always has enough questions
+        category = "League"
         
         select_response = authenticated_session.post(
             f"{BASE_URL}/api/games/{game_id}/select-category",
             params={"category": category}
         )
+        assert select_response.status_code == 200, f"Select category failed: {select_response.text}"
         questions = select_response.json()["questions"]
         
         # Answer all 3 questions
@@ -348,15 +345,14 @@ class TestFullGameFlow:
         assert game["turn_deadline"] is not None
         print(f"Game state: round {game['current_round']}, is_my_turn={game['is_my_turn']}")
         
-        # 3. Select category
-        cat_response = authenticated_session.get(f"{BASE_URL}/api/questions/categories")
-        category = cat_response.json()[0]
+        # 3. Select category (use 'League' which has enough questions)
+        category = "League"
         
         select_response = authenticated_session.post(
             f"{BASE_URL}/api/games/{game_id}/select-category",
             params={"category": category}
         )
-        assert select_response.status_code == 200
+        assert select_response.status_code == 200, f"Select category failed: {select_response.text}"
         questions = select_response.json()["questions"]
         assert len(questions) == 3
         print(f"Selected category: {category}, got {len(questions)} questions")
