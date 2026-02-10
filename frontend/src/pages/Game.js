@@ -248,6 +248,7 @@ export default function Game() {
 
     const timeTaken = (Date.now() - startTime) / 1000;
     const currentQuestion = currentQuestions[currentQuestionIndex];
+    const qIndex = currentQuestionIndex; // Capture index for feedback
 
     try {
       const response = await games.submitAnswer(gameId, {
@@ -256,12 +257,12 @@ export default function Game() {
         time_taken: timeTaken,
       });
 
-      setFeedback(response.data);
+      setFeedback({ ...response.data, _questionIndex: qIndex });
       setGamePhase('feedback');
 
       setTimeout(() => {
-        if (currentQuestionIndex < currentQuestions.length - 1) {
-          setCurrentQuestionIndex(currentQuestionIndex + 1);
+        if (qIndex < currentQuestions.length - 1) {
+          setCurrentQuestionIndex(qIndex + 1);
           setSelectedAnswer(null);
           setGamePhase('question');
           setStartTime(Date.now());
@@ -271,9 +272,11 @@ export default function Game() {
           // Turn done, reload to check state
           loadGame();
         }
-      }, 2000);
+      }, 2500);
     } catch (error) {
       console.error('Failed to submit answer:', error);
+      // Reload game on error to recover
+      loadGame();
     }
   };
 
