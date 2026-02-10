@@ -1516,10 +1516,9 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
         if len(answers) >= 3:
             # Round complete in solo mode
             if game.current_round >= 6:
-                total_p1 = sum(r.player1_score for r in game.rounds)
                 game.winner_id = game.player1_id
                 game.status = 'finished'
-                current_user.club_knowledge_score = (current_user.club_knowledge_score or 0) + total_p1
+                old_rank, new_rank, delta = await update_ball_knowledge(db, game, current_user)
             else:
                 game.current_round += 1
                 game.turn_player_id = game.player1_id
@@ -1550,26 +1549,7 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
                 total_p2 = sum(r.player2_score for r in game.rounds)
                 game.winner_id = game.player1_id if total_p1 > total_p2 else game.player2_id
                 game.status = 'finished'
-                
-                # Update skill rankings (ELO-like system) for non-bot, non-self games
-                if not game.is_bot_game:
-                    p1_result = await db.execute(select(User).where(User.user_id == game.player1_id))
-                    p2_result = await db.execute(select(User).where(User.user_id == game.player2_id))
-                    player1 = p1_result.scalar_one_or_none()
-                    player2 = p2_result.scalar_one_or_none()
-                    
-                    if player1 and player2:
-                        p1_rank = player1.skill_rank or 1000
-                        p2_rank = player2.skill_rank or 1000
-                        
-                        p1_delta, p2_delta = calculate_elo_change(
-                            p1_rank, p2_rank,
-                            winner_is_p1=(game.winner_id == game.player1_id),
-                            score_diff=abs(total_p1 - total_p2)
-                        )
-                        
-                        player1.skill_rank = max(100, p1_rank + p1_delta)
-                        player2.skill_rank = max(100, p2_rank + p2_delta)
+                old_rank, new_rank, delta = await update_ball_knowledge(db, game, current_user)
             else:
                 game.current_round += 1
                 game.turn_player_id = game.player1_id
