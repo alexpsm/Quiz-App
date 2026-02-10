@@ -5,6 +5,7 @@ import { Layout } from '../components/Layout';
 import { challengesApi, games } from '../lib/api';
 import { motion } from 'framer-motion';
 import { Trophy, Zap, Shield, Flame, Copy, Check, Users } from 'lucide-react';
+import { InlineAd } from '../components/AdWidget';
 
 const DIFF_CONFIG = {
   easy: { icon: Zap, color: 'text-green-400', border: 'border-green-400/40', bg: 'bg-green-400/10', label: 'Easy' },
