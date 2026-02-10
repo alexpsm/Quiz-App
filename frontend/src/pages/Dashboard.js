@@ -207,18 +207,9 @@ export default function Dashboard() {
             data-testid="career-challenge-section"
           >
             <div className="bg-gradient-to-r from-neon-yellow/20 to-orange-500/20 p-4 border-b border-neon-yellow/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <User className="text-neon-yellow" size={22} />
-                  <h3 className="text-lg font-extrabold tracking-tighter uppercase text-white">Career Mode</h3>
-                </div>
-                <span className={`text-[10px] uppercase px-2 py-1 rounded font-bold ${
-                  careerChallenge.difficulty === 'easy' ? 'bg-green-500/30 text-green-400' :
-                  careerChallenge.difficulty === 'hard' ? 'bg-red-500/30 text-red-400' :
-                  'bg-neon-yellow/30 text-neon-yellow'
-                }`}>
-                  {careerChallenge.difficulty}
-                </span>
+              <div className="flex items-center gap-2">
+                <User className="text-neon-yellow" size={22} />
+                <h3 className="text-lg font-extrabold tracking-tighter uppercase text-white">Career Mode Challenge</h3>
               </div>
             </div>
 
