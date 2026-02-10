@@ -122,7 +122,7 @@ export default function Game() {
           if (g.status === 'club_challenge') {
             handleCategorySelect('Club');
           } else {
-            loadCategories();
+            await loadCategories();
             setGamePhase('category_selection');
           }
         }
