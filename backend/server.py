@@ -852,6 +852,14 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
     categories = [row[0] for row in result.all()]
     return categories
 
+@api_router.get("/questions/random-clubs")
+async def get_random_clubs():
+    """Return 3 random club names for category selection"""
+    import random
+    from clubs_data import get_all_clubs
+    clubs = get_all_clubs()
+    return random.sample(clubs, min(3, len(clubs)))
+
 # Game Endpoints
 BOT_USERNAME = "TheScore90Bot"
 
