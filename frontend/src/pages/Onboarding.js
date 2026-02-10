@@ -10,14 +10,14 @@ import {
 } from '../components/ui/select';
 
 const FOOTBALL_AVATARS = [
-  { seed: 'Goalkeeper', label: 'Keeper' },
-  { seed: 'Striker', label: 'Striker' },
-  { seed: 'Midfielder', label: 'Mid' },
-  { seed: 'Defender', label: 'Defender' },
-  { seed: 'Captain', label: 'Captain' },
-  { seed: 'Winger', label: 'Winger' },
-  { seed: 'Playmaker', label: 'Maker' },
-  { seed: 'FreeKick', label: 'FK' },
+  { seed: 'Ronaldo', label: 'Striker' },
+  { seed: 'Messi', label: 'Playmaker' },
+  { seed: 'Mbappe', label: 'Winger' },
+  { seed: 'Haaland', label: 'Forward' },
+  { seed: 'DeBruyne', label: 'Midfield' },
+  { seed: 'VanDijk', label: 'Defender' },
+  { seed: 'Modric', label: 'Captain' },
+  { seed: 'Neuer', label: 'Keeper' },
 ];
 
 const COUNTRIES = [
@@ -87,7 +87,7 @@ export default function Onboarding() {
     }
   };
 
-  const getAvatarUrl = (seed) => `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${seed}&backgroundColor=1a1a2e`;
+  const getAvatarUrl = (seed) => `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
 
   const isFormValid = username && username.length >= 3 && favoriteClub && country && age && phoneNumber;
 
