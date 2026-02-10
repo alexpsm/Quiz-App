@@ -1919,6 +1919,7 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
     }
     
     bk_update = None
+    achievements_earned = []
     
     if is_solo:
         # Solo / Club Challenge mode: all answers go to player1, round completes after 3 answers
@@ -1928,12 +1929,21 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
         game_round.player1_score += score
         
         if len(answers) >= 3:
+            # Check for round-specific achievements
+            round_achievements = await check_and_award_achievements(
+                db, current_user, None, {"answers": answers}
+            )
+            achievements_earned.extend(round_achievements)
+            
             # Round complete in solo mode
             if game.current_round >= 6:
                 game.winner_id = game.player1_id
                 game.status = 'finished'
                 old_rank, new_rank, delta, tier_up = await update_ball_knowledge(db, game, current_user)
                 bk_update = {"old": old_rank, "new": new_rank, "delta": delta}
+                # Check game completion achievements
+                game_achievements = await check_and_award_achievements(db, current_user, game)
+                achievements_earned.extend(game_achievements)
             else:
                 game.current_round += 1
                 game.turn_player_id = game.player1_id
@@ -1946,6 +1956,11 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
         
         # Check if player1 completed all 3 questions
         if len(answers) >= 3:
+            # Check for round-specific achievements
+            round_achievements = await check_and_award_achievements(
+                db, current_user, None, {"answers": answers}
+            )
+            achievements_earned.extend(round_achievements)
             # Switch turn to player2
             game.turn_player_id = game.player2_id
             game.turn_started_at = datetime.now(timezone.utc)
@@ -1957,6 +1972,12 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
         
         # Check if player2 completed all 3 questions
         if len(answers) >= 3:
+            # Check for round-specific achievements
+            round_achievements = await check_and_award_achievements(
+                db, current_user, None, {"answers": answers}
+            )
+            achievements_earned.extend(round_achievements)
+            
             # Round complete, move to next round
             if game.current_round >= 6:
                 # Game finished
@@ -1966,6 +1987,9 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
                 game.status = 'finished'
                 old_rank, new_rank, delta, tier_up = await update_ball_knowledge(db, game, current_user)
                 bk_update = {"old": old_rank, "new": new_rank, "delta": delta}
+                # Check game completion achievements
+                game_achievements = await check_and_award_achievements(db, current_user, game)
+                achievements_earned.extend(game_achievements)
                 
                 # P2P credit payout
                 if game.credit_bet and game.credit_bet > 0:
@@ -1985,7 +2009,8 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
         "is_correct": is_correct,
         "score": score,
         "correct_option": question.correct_option,
-        "ball_knowledge_update": bk_update
+        "ball_knowledge_update": bk_update,
+        "achievements_earned": achievements_earned if achievements_earned else None
     }
 
 
