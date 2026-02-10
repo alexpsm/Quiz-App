@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Target, LogOut, Trophy, Clock, Globe, Calendar, Shield, Camera } from 'lucide-react';
+import { Brain, Target, LogOut, Trophy, Clock, Globe, Calendar, Shield, Camera, ChevronDown, ChevronUp } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { PoweredByScore90 } from '../components/Score90Logo';
