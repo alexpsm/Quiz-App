@@ -50,8 +50,11 @@ Build a cross-platform, mobile-first web app called "QuizBall" — a football tr
 - [x] Ad space placeholder
 
 ### V3 Adaptive Matchmaking & Club Questions (December 2025)
-- [x] **Club-Specific Question Categories** — 86+ categories including "Manchester United-History", "Arsenal-Players", "Bayern Munich-Trophies", etc.
-- [x] **284 Club-Specific Questions** — Covers 18+ major clubs with History, Players, Managers, and Trophies categories
+- [x] **Unified 'Club' Category** — Single "Club" category replaces 68+ club-specific subcategories
+- [x] **869 Club Questions** — Covers all 96 clubs from 5 leagues (Premier League, Bundesliga, La Liga, Serie A, Ligue 1)
+- [x] **Question Types:** nickname, stadium, city, founded year, colors, league, reverse questions
+- [x] **Club Challenge Mode Enhancement** — Auto-selects "Club" category, filters questions by user's favorite club
+- [x] **18 Total Categories** — Reduced from 85+ to streamlined 18 categories
 - [x] **Skill-Based Matchmaking Queue** — New MatchmakingQueue table with skill_rank matching
 - [x] **ELO-Like Ranking System** — skill_rank updates after ranked (non-bot) games
   - K-factor: 32
