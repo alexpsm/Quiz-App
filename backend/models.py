@@ -25,6 +25,7 @@ class User(Base):
     country = Column(String(100), index=True)
     age = Column(Integer)
     phone_number = Column(String(20))
+    marketing_consent = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     
     sessions = relationship('UserSession', back_populates='user', cascade='all, delete-orphan')
