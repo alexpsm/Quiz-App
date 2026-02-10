@@ -205,3 +205,19 @@ class UserQuestionHistory(Base):
         Index('idx_uqh_user_question', 'user_id', 'question_id'),
         Index('idx_uqh_user_served', 'user_id', 'served_at'),
     )
+
+
+class WeeklyChallenge(Base):
+    """Weekly challenges with credit betting against the bot"""
+    __tablename__ = 'weekly_challenges'
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    week_start = Column(DateTime(timezone=True), nullable=False, index=True)
+    week_end = Column(DateTime(timezone=True), nullable=False)
+    difficulty = Column(String(20), nullable=False)  # easy, medium, hard, very_hard
+    topic = Column(String(100), nullable=False)
+    title = Column(String(255), nullable=False)
+    bet_amount = Column(Integer, nullable=False)
+    win_amount = Column(Integer, nullable=False)
+    bot_accuracy = Column(Float, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
