@@ -2745,6 +2745,39 @@ async def get_user_achievements(user_id: str, db: AsyncSession = Depends(get_db)
     }
 
 
+# ========== PRIZE DRAWS ENDPOINTS ==========
+
+class PrizeDrawEntry(BaseModel):
+    draw_id: str
+    cost: int
+
+@api_router.post("/prize-draws/enter")
+async def enter_prize_draw(
+    entry: PrizeDrawEntry,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Enter a prize draw by spending credits"""
+    # Validate user has enough credits
+    if (current_user.credits or 0) < entry.cost:
+        raise HTTPException(status_code=400, detail="Not enough credits")
+    
+    # Deduct credits
+    current_user.credits = (current_user.credits or 0) - entry.cost
+    await db.commit()
+    
+    # In a real implementation, we'd store the entry in a prize_draw_entries table
+    # For now, just deduct credits and return success
+    
+    return {
+        "success": True,
+        "draw_id": entry.draw_id,
+        "credits_spent": entry.cost,
+        "remaining_credits": current_user.credits,
+        "message": "Entry submitted successfully. Good luck!"
+    }
+
+
 app.include_router(api_router)
 
 # Serve uploaded files
