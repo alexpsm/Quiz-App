@@ -498,20 +498,25 @@ export default function Game() {
 
             {/* WAITING (Real Player) - 3hr countdown */}
             {gamePhase === 'waiting' && (
-              <motion.div key="waiting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
-                <div className="relative w-20 h-20 mx-auto mb-6">
-                  <div className="absolute inset-0 border-4 border-neon-blue/30 rounded-full" />
-                  <div className="absolute inset-0 border-4 border-neon-pink border-t-transparent rounded-full animate-spin" />
-                </div>
-                <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-2">Opponent's Turn</h2>
-                <p className="text-gray-400 mb-6">Waiting for {opponent?.username || 'opponent'} to play...</p>
-                {turnTimeLeft !== null && (
-                  <div className="bg-card border-2 border-neon-yellow/30 rounded-lg p-4 inline-block shadow-neon-yellow" data-testid="turn-countdown">
-                    <Clock className="text-neon-yellow mx-auto mb-2" size={24} />
-                    <p className="text-2xl font-black tracking-tighter text-neon-yellow">{formatCountdown(turnTimeLeft)}</p>
-                    <p className="text-xs text-gray-500 uppercase mt-1">Time remaining</p>
+              <motion.div key="waiting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                <div className="text-center">
+                  <div className="relative w-16 h-16 mx-auto mb-4">
+                    <div className="absolute inset-0 border-4 border-neon-blue/30 rounded-full" />
+                    <div className="absolute inset-0 border-4 border-neon-pink border-t-transparent rounded-full animate-spin" />
                   </div>
-                )}
+                  <h2 className="text-xl font-extrabold tracking-tighter uppercase text-white mb-1">Opponent's Turn</h2>
+                  <p className="text-sm text-gray-400 mb-4">Waiting for {opponent?.username || 'opponent'} to play...</p>
+                  {turnTimeLeft !== null && (
+                    <div className="bg-card border-2 border-neon-yellow/30 rounded-lg p-3 inline-block shadow-neon-yellow" data-testid="turn-countdown">
+                      <Clock className="text-neon-yellow mx-auto mb-1" size={20} />
+                      <p className="text-xl font-black tracking-tighter text-neon-yellow">{formatCountdown(turnTimeLeft)}</p>
+                      <p className="text-[10px] text-gray-500 uppercase mt-1">Time remaining</p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Instagram Carousel - shown while waiting */}
+                <InstagramCarousel autoPlay={true} interval={4000} />
               </motion.div>
             )}
 
