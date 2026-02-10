@@ -22,6 +22,8 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     favorite_club = Column(String(100), index=True)
     club_knowledge_score = Column(Integer, default=0)
+    player_tier = Column(Integer, default=1)
+    total_game_points = Column(Integer, default=0)
     country = Column(String(100), index=True)
     age = Column(Integer)
     phone_number = Column(String(20))
