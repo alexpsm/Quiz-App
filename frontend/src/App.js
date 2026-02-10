@@ -106,6 +106,12 @@ const AppRouter = () => {
         </ProtectedRoute>
       } />
       
+      <Route path="/career-challenge" element={
+        <ProtectedRoute>
+          <CareerChallenge />
+        </ProtectedRoute>
+      } />
+      
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
