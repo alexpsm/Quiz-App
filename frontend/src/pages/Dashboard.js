@@ -15,7 +15,7 @@ export default function Dashboard() {
   const { user, checkAuth } = useAuth();
   const [activeGames, setActiveGames] = useState([]);
   const [ranks, setRanks] = useState(null);
-  const [clubWar, setClubWar] = useState(null);
+  const [careerChallenge, setCareerChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAllGames, setShowAllGames] = useState(false);
 
@@ -26,14 +26,14 @@ export default function Dashboard() {
 
   const loadData = async () => {
     try {
-      const [gamesRes, rankRes, warRes] = await Promise.allSettled([
+      const [gamesRes, ranksRes, careerRes] = await Promise.allSettled([
         games.list(),
         users.myRank(),
-        api.get('/club-wars/current')
+        api.get('/career-challenge/today')
       ]);
       if (gamesRes.status === 'fulfilled') setActiveGames(gamesRes.value.data);
-      if (rankRes.status === 'fulfilled') setRanks(rankRes.value.data);
-      if (warRes.status === 'fulfilled') setClubWar(warRes.value.data);
+      if (ranksRes.status === 'fulfilled') setRanks(ranksRes.value.data);
+      if (careerRes.status === 'fulfilled') setCareerChallenge(careerRes.value.data);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
