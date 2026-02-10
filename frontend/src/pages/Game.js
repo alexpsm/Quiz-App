@@ -239,9 +239,17 @@ export default function Game() {
     if (playbackIndex < (playbackAnswers?.answers?.length || 0) - 1) {
       setPlaybackIndex(prev => prev + 1);
     } else {
-      // Done, go to category selection
+      // Done playback, reset all round state and go to category selection
       setPlaybackAnswers(null);
       setPlaybackIndex(0);
+      setSelectedAnswer(null);
+      setFeedback(null);
+      setCurrentQuestions([]);
+      setCurrentQuestionIndex(0);
+      setBotAnswers(null);
+      setBotAnswerIndex(0);
+      setBotPhaseStep('idle');
+      loadCategories();
       setGamePhase('category_selection');
     }
   };
