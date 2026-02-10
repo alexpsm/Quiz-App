@@ -80,6 +80,13 @@ QuizBall is a football quiz game with skill-based matchmaking and credit betting
 - **Game Over**: Rotating FlashScore/Polymarket results ad
 - **Matchmaking Wait**: FlashScore inline
 
+### Prize Draws System (NEW - Feb 2025)
+- **Store page section** with 4 active prize draws
+- Each draw displays: Prize image, title, countdown timer, entry cost (credits), entry count
+- **Tier-gated entries**: Each draw has minimum tier requirement (5/10/15/20)
+- **Prizes**: UCL Final Tickets, Signed Messi Jersey, PS5+FC25 Bundle, Stadium Tour
+- **Backend endpoint**: `POST /api/prize-draws/enter` deducts credits
+
 ## Future/Backlog
 - Social OAuth (Facebook, Twitter, Apple)
 - Refactor server.py into Flask Blueprints
