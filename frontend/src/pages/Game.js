@@ -423,6 +423,10 @@ export default function Game() {
                     })}
                   </div>
                 )}
+                {/* Unobtrusive ad during category selection */}
+                <div className="flex justify-center pt-2">
+                  <InlineAd type="flashscore" />
+                </div>
               </motion.div>
             )}
 
