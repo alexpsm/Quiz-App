@@ -1783,6 +1783,7 @@ async def create_invite_bet(bet_amount: int = 0, current_user: User = Depends(ge
     game = Game(
         id=str(uuid.uuid4()),
         player1_id=current_user.user_id,
+        player2_id=current_user.user_id,  # Placeholder until friend joins
         status='pending',
         current_round=1,
         turn_player_id=current_user.user_id,
