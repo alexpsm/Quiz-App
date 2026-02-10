@@ -1260,10 +1260,24 @@ async def bot_play(game_id: str, current_user: User = Depends(get_current_user),
     q_result = await db.execute(select(Question).where(Question.id.in_(q_ids)))
     questions_map = {q.id: q for q in q_result.scalars().all()}
     
-    # Simulate bot answers based on user's skill rank
-    # Higher user rank = smarter bot (50-85% accuracy)
-    user_rank = current_user.skill_rank or 1000
-    bot_accuracy = min(0.85, max(0.50, user_rank / 2000))
+    # Calculate bot accuracy dynamically based on user's performance in THIS game
+    # Look at all player1 answers across completed rounds
+    total_answers = 0
+    correct_answers = 0
+    for r in game.rounds:
+        for ans in (r.player1_answers or []):
+            total_answers += 1
+            if ans.get("is_correct"):
+                correct_answers += 1
+    
+    if total_answers > 0:
+        user_accuracy = correct_answers / total_answers
+    else:
+        user_accuracy = 0.5  # default for first round
+    
+    # Bot mirrors user accuracy with slight randomness (+/- 10%)
+    # This keeps games competitive regardless of skill level
+    bot_accuracy = max(0.15, min(0.95, user_accuracy + random.uniform(-0.10, 0.10)))
     
     bot_answers = []
     bot_score = 0
