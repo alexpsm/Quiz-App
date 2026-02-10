@@ -71,6 +71,14 @@ QuizBall is a football quiz game with skill-based matchmaking and credit betting
 - ✅ Achievement Badges System (20 achievements, 7 categories)
 - ✅ Profile page achievements display
 - ✅ Game over screen achievement notifications
+- ✅ Native advertising widgets (PolyMarket, FlashScore) - unobtrusive integration
+
+### Advertising Integration
+- **Dashboard**: Polymarket banner ("Predict football outcomes")
+- **Category Selection**: FlashScore inline ("Live Scores")
+- **Challenge/P2P Bet**: Polymarket inline ("Predict & Win")
+- **Game Over**: Rotating FlashScore/Polymarket results ad
+- **Matchmaking Wait**: FlashScore inline
 
 ## Future/Backlog
 - Social OAuth (Facebook, Twitter, Apple)
