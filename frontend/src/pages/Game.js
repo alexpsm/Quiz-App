@@ -434,9 +434,9 @@ export default function Game() {
                 <div>
                   <h2 className={`text-3xl font-extrabold tracking-tighter uppercase ${feedback.is_correct ? 'text-neon-yellow' : 'text-destructive'}`} data-testid="feedback-result">{feedback.is_correct ? 'Correct!' : 'Wrong'}</h2>
                   <p className="text-2xl font-black tracking-tighter text-neon-blue mt-2">+{feedback.score} points</p>
-                  {!feedback.is_correct && feedback.correct_option && currentQuestions[currentQuestionIndex] && (
+                  {!feedback.is_correct && feedback.correct_option && currentQuestions[feedback._questionIndex ?? currentQuestionIndex] && (
                     <p className="text-sm text-gray-400 mt-3" data-testid="correct-answer-reveal">
-                      Correct answer: <span className="text-neon-yellow font-bold">{currentQuestions[currentQuestionIndex][`option_${feedback.correct_option.toLowerCase()}`]}</span> ({feedback.correct_option})
+                      Correct answer: <span className="text-neon-yellow font-bold">{currentQuestions[feedback._questionIndex ?? currentQuestionIndex][`option_${feedback.correct_option.toLowerCase()}`]}</span> ({feedback.correct_option})
                     </p>
                   )}
                 </div>
