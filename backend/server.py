@@ -1220,7 +1220,8 @@ async def get_game(game_id: str, current_user: User = Depends(get_current_user),
         "is_bot_game": game.is_bot_game or False,
         "turn_started_at": game.turn_started_at.isoformat() if game.turn_started_at else None,
         "turn_deadline": turn_deadline,
-        "rounds": rounds_data
+        "rounds": rounds_data,
+        "my_ball_knowledge": current_user.skill_rank or 1000
     }
 
 @api_router.post("/games/{game_id}/bot-play")
