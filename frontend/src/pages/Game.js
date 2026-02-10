@@ -363,18 +363,28 @@ export default function Game() {
                   <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-2">Select Category</h2>
                   <p className="text-sm text-gray-400">Choose your trivia topic</p>
                 </div>
-                <div className="space-y-3">
-                  {categories.map((category, index) => {
-                    const colors = ['border-neon-blue/50 hover:border-neon-blue shadow-neon-blue/30', 'border-neon-pink/50 hover:border-neon-pink shadow-neon-pink/30', 'border-neon-yellow/50 hover:border-neon-yellow shadow-neon-yellow/30'];
-                    return (
-                      <motion.button key={category} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.1 }}
-                        onClick={() => handleCategorySelect(category)} data-testid={`category-${category}`}
-                        className={`w-full bg-card border-2 ${colors[index]} rounded-lg p-6 text-left transition-all active:scale-[0.98] hover:shadow-lg`}>
-                        <p className="text-xl font-bold uppercase tracking-tight text-white">{category}</p>
-                      </motion.button>
-                    );
-                  })}
-                </div>
+                {categories.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="relative w-12 h-12 mx-auto mb-3">
+                      <div className="absolute inset-0 border-4 border-neon-blue/30 rounded-full" />
+                      <div className="absolute inset-0 border-4 border-neon-pink border-t-transparent rounded-full animate-spin" />
+                    </div>
+                    <p className="text-gray-400 text-sm">Loading categories...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3" data-testid="category-list">
+                    {categories.map((category, index) => {
+                      const colors = ['border-neon-blue/50 hover:border-neon-blue shadow-neon-blue/30', 'border-neon-pink/50 hover:border-neon-pink shadow-neon-pink/30', 'border-neon-yellow/50 hover:border-neon-yellow shadow-neon-yellow/30'];
+                      return (
+                        <motion.button key={category} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.1 }}
+                          onClick={() => handleCategorySelect(category)} data-testid={`category-${category}`}
+                          className={`w-full bg-card border-2 ${colors[index]} rounded-lg p-6 text-left transition-all active:scale-[0.98] hover:shadow-lg`}>
+                          <p className="text-xl font-bold uppercase tracking-tight text-white">{category}</p>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                )}
               </motion.div>
             )}
 
