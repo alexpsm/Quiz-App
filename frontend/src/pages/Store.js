@@ -247,18 +247,19 @@ export default function Store() {
     
     setEnteringDraw(draw.id);
     try {
-      // In a real implementation, this would call an API endpoint
-      // For now, we'll simulate the entry
-      await api.post('/prize-draws/enter', {
+      const response = await api.post('/prize-draws/enter', {
         draw_id: draw.id,
         cost: draw.cost
       });
       await checkAuth(); // Refresh user credits
-      alert(`Successfully entered ${draw.title}! Good luck!`);
+      alert(`🎉 Successfully entered ${draw.title}!\n\nCredits spent: ${draw.cost}\nRemaining: ${response.data.remaining_credits}\n\nGood luck!`);
     } catch (error) {
       console.error('Failed to enter draw:', error);
-      // Show success anyway for demo (API may not exist yet)
-      alert(`Entry submitted for ${draw.title}!`);
+      if (error.response?.data?.detail) {
+        alert(`Error: ${error.response.data.detail}`);
+      } else {
+        alert('Failed to enter draw. Please try again.');
+      }
     } finally {
       setEnteringDraw(null);
     }
