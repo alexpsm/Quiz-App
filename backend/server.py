@@ -1364,17 +1364,39 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
         score = base_score + time_bonus
     
     # Update round
+    is_solo = game.player1_id == game.player2_id  # Club challenge / solo mode
     is_player1 = game.player1_id == current_user.user_id
     
-    if is_player1:
+    answer_entry = {
+        "question_id": data.question_id,
+        "selected_option": data.selected_option,
+        "correct_option": question.correct_option,
+        "is_correct": is_correct,
+        "time_taken": data.time_taken,
+        "score": score
+    }
+    
+    if is_solo:
+        # Solo / Club Challenge mode: all answers go to player1, round completes after 3 answers
         answers = list(game_round.player1_answers or [])
-        answers.append({
-            "question_id": data.question_id,
-            "selected_option": data.selected_option,
-            "is_correct": is_correct,
-            "time_taken": data.time_taken,
-            "score": score
-        })
+        answers.append(answer_entry)
+        game_round.player1_answers = answers
+        game_round.player1_score += score
+        
+        if len(answers) >= 3:
+            # Round complete in solo mode
+            if game.current_round >= 6:
+                total_p1 = sum(r.player1_score for r in game.rounds)
+                game.winner_id = game.player1_id
+                game.status = 'finished'
+                current_user.club_knowledge_score = (current_user.club_knowledge_score or 0) + total_p1
+            else:
+                game.current_round += 1
+                game.turn_player_id = game.player1_id
+                game.turn_started_at = datetime.now(timezone.utc)
+    elif is_player1:
+        answers = list(game_round.player1_answers or [])
+        answers.append(answer_entry)
         game_round.player1_answers = answers
         game_round.player1_score += score
         
@@ -1385,13 +1407,7 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
             game.turn_started_at = datetime.now(timezone.utc)
     else:
         answers = list(game_round.player2_answers or [])
-        answers.append({
-            "question_id": data.question_id,
-            "selected_option": data.selected_option,
-            "is_correct": is_correct,
-            "time_taken": data.time_taken,
-            "score": score
-        })
+        answers.append(answer_entry)
         game_round.player2_answers = answers
         game_round.player2_score += score
         
@@ -1406,8 +1422,7 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
                 game.status = 'finished'
                 
                 # Update skill rankings (ELO-like system) for non-bot, non-self games
-                if not game.is_bot_game and game.player1_id != game.player2_id:
-                    # Get both players
+                if not game.is_bot_game:
                     p1_result = await db.execute(select(User).where(User.user_id == game.player1_id))
                     p2_result = await db.execute(select(User).where(User.user_id == game.player2_id))
                     player1 = p1_result.scalar_one_or_none()
@@ -1417,7 +1432,6 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
                         p1_rank = player1.skill_rank or 1000
                         p2_rank = player2.skill_rank or 1000
                         
-                        # Calculate ELO changes
                         p1_delta, p2_delta = calculate_elo_change(
                             p1_rank, p2_rank,
                             winner_is_p1=(game.winner_id == game.player1_id),
@@ -1426,25 +1440,17 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
                         
                         player1.skill_rank = max(100, p1_rank + p1_delta)
                         player2.skill_rank = max(100, p2_rank + p2_delta)
-                
-                # Update club knowledge score for club challenge mode
-                if game.status == 'club_challenge' or (game.player1_id == game.player2_id):
-                    current_user.club_knowledge_score = (current_user.club_knowledge_score or 0) + total_p1
             else:
                 game.current_round += 1
                 game.turn_player_id = game.player1_id
                 game.turn_started_at = datetime.now(timezone.utc)
-    
-    # Special handling for club challenge single-player mode
-    if game.player1_id == game.player2_id and is_correct:
-        current_user.club_knowledge_score = (current_user.club_knowledge_score or 0) + score
     
     await db.commit()
     
     return {
         "is_correct": is_correct,
         "score": score,
-        "correct_option": question.correct_option if is_correct else None
+        "correct_option": question.correct_option
     }
 
 # ========== STRIPE PAYMENT ENDPOINTS ==========
