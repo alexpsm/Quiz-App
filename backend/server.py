@@ -1507,6 +1507,8 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
         "score": score
     }
     
+    bk_update = None
+    
     if is_solo:
         # Solo / Club Challenge mode: all answers go to player1, round completes after 3 answers
         answers = list(game_round.player1_answers or [])
