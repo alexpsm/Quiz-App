@@ -714,6 +714,8 @@ export default function Game() {
                     </div>
                   </motion.div>
                 )}
+                {/* Sponsored ad on game over screen */}
+                <ResultsAd className="mt-4" />
                 <button onClick={() => navigate('/dashboard')} data-testid="return-dashboard-btn"
                   className="bg-gradient-to-r from-neon-blue to-neon-pink hover:from-neon-pink hover:to-neon-yellow h-12 px-8 rounded-sm font-bold uppercase tracking-wider shadow-neon-blue hover:shadow-neon-pink transition-all active:scale-95 text-white">
                   Return to Dashboard
