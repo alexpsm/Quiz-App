@@ -44,6 +44,7 @@ export default function Game() {
   const [bkUpdate, setBkUpdate] = useState(null); // {old, new, delta}
   const [creditsWon, setCreditsWon] = useState(null);
   const [tierUpdate, setTierUpdate] = useState(null);
+  const [achievementsEarned, setAchievementsEarned] = useState([]);
   const [botCountdown, setBotCountdown] = useState(45);
   // Playback state
   const [playbackAnswers, setPlaybackAnswers] = useState(null);
