@@ -532,7 +532,8 @@ async def get_leaderboard(limit: int = 50, db: AsyncSession = Depends(get_db)):
         "user_id": user.user_id,
         "username": user.username,
         "avatar": user.avatar,
-        "skill_rank": user.skill_rank
+        "skill_rank": user.skill_rank,
+        "player_tier": user.player_tier or 1
     } for user in users]
 
 @api_router.get("/users/club-leaderboard")
