@@ -75,6 +75,8 @@ class Game(Base):
     is_bot_game = Column(Boolean, default=False)
     winner_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'))
     invite_code = Column(String(20), unique=True, index=True)
+    credit_bet = Column(Integer, default=0)
+    challenge_id = Column(String(36), ForeignKey('weekly_challenges.id', ondelete='SET NULL'), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
