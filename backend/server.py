@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 from database import get_db
-from models import User, UserSession, Question, Game, GameRound, League, LeagueMembership, PaymentTransaction, ClubWar, ClubWarContribution, MatchmakingQueue, UserQuestionHistory, WeeklyChallenge, UserAchievement
+from models import User, UserSession, Question, Game, GameRound, League, LeagueMembership, PaymentTransaction, MatchmakingQueue, UserQuestionHistory, WeeklyChallenge, UserAchievement, CareerPathChallenge, CareerPathAttempt
 from clubs_data import CLUBS_BY_LEAGUE, get_all_clubs, get_club_league
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Dict, Any
