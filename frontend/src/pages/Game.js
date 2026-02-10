@@ -522,21 +522,26 @@ export default function Game() {
 
             {/* BOT COUNTDOWN (45s) */}
             {gamePhase === 'bot_countdown' && (
-              <motion.div key="bot_countdown" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
-                <img src={opponent?.avatar} alt={BOT_USERNAME} className="w-20 h-20 rounded-full border-4 border-neon-blue mx-auto mb-4 shadow-neon-blue" />
-                <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-2">{BOT_USERNAME}</h2>
-                <p className="text-gray-400 mb-6">is preparing to answer...</p>
-                <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-6 max-w-xs mx-auto shadow-neon-blue" data-testid="bot-countdown">
-                  <p className="text-5xl font-black tracking-tighter text-neon-blue mb-2">{botCountdown}s</p>
-                  <div className="w-full bg-black/50 rounded-full h-2 overflow-hidden">
-                    <motion.div className="h-full bg-neon-blue" initial={{ width: '100%' }} animate={{ width: `${(botCountdown / 45) * 100}%` }} transition={{ duration: 0.5 }} />
+              <motion.div key="bot_countdown" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                <div className="text-center">
+                  <img src={opponent?.avatar} alt={BOT_USERNAME} className="w-16 h-16 rounded-full border-4 border-neon-blue mx-auto mb-3 shadow-neon-blue" />
+                  <h2 className="text-xl font-extrabold tracking-tighter uppercase text-white mb-1">{BOT_USERNAME}</h2>
+                  <p className="text-sm text-gray-400 mb-4">is preparing to answer...</p>
+                  <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-4 max-w-xs mx-auto shadow-neon-blue" data-testid="bot-countdown">
+                    <p className="text-4xl font-black tracking-tighter text-neon-blue mb-2">{botCountdown}s</p>
+                    <div className="w-full bg-black/50 rounded-full h-2 overflow-hidden">
+                      <motion.div className="h-full bg-neon-blue" initial={{ width: '100%' }} animate={{ width: `${(botCountdown / 45) * 100}%` }} transition={{ duration: 0.5 }} />
+                    </div>
+                    <p className="text-xs text-gray-500 uppercase mt-2">Bot is thinking</p>
                   </div>
-                  <p className="text-xs text-gray-500 uppercase mt-3">Bot is thinking</p>
+                  <button onClick={() => { setBotCountdown(0); triggerBotPlay(); }} data-testid="skip-bot-wait"
+                    className="mt-3 text-xs text-neon-pink hover:text-neon-yellow transition-colors underline">
+                    Skip wait
+                  </button>
                 </div>
-                <button onClick={() => { setBotCountdown(0); triggerBotPlay(); }} data-testid="skip-bot-wait"
-                  className="mt-4 text-sm text-neon-pink hover:text-neon-yellow transition-colors underline">
-                  Skip wait
-                </button>
+                
+                {/* Instagram Carousel - shown while bot is "thinking" */}
+                <InstagramCarousel autoPlay={true} interval={4000} />
               </motion.div>
             )}
 
