@@ -66,6 +66,12 @@ export const challengesApi = {
   start: (challengeId) => api.post(`/challenges/${challengeId}/start`),
 };
 
+export const achievements = {
+  getAll: () => api.get('/achievements'),
+  getMine: () => api.get('/achievements/me'),
+  getUser: (userId) => api.get(`/users/${userId}/achievements`),
+};
+
 export const leagues = {
   list: (leagueType) => api.get(`/leagues${leagueType ? `?league_type=${leagueType}` : ''}`),
   create: (data) => api.post('/leagues', data),
