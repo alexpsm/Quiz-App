@@ -5,7 +5,7 @@ import { Clock, Trophy, ArrowLeft, Brain, Eye } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { PoweredByScore90 } from '../components/Score90Logo';
 import { useAuth } from '../context/AuthContext';
-import { games, questions as questionsApi } from '../lib/api';
+import { games, questions as questionsApi, challengesApi } from '../lib/api';
 
 const TIMER_DURATION = 15;
 const BOT_USERNAME = 'TheScore90Bot';
