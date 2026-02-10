@@ -41,6 +41,7 @@ export default function Game() {
   const [botAnswerIndex, setBotAnswerIndex] = useState(0);
   const [botPhaseStep, setBotPhaseStep] = useState('idle'); // idle | thinking | answered
   const [bkUpdate, setBkUpdate] = useState(null); // {old, new, delta}
+  const [creditsWon, setCreditsWon] = useState(null);
   const [botCountdown, setBotCountdown] = useState(45);
   // Playback state
   const [playbackAnswers, setPlaybackAnswers] = useState(null);
