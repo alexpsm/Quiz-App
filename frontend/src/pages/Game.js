@@ -54,9 +54,11 @@ export default function Game() {
       const g = response.data;
       setGame(g);
 
+      const isSolo = g.player1?.user_id === g.player2?.user_id;
+
       if (g.status === 'finished') {
         setGamePhase('game_over');
-      } else if (!g.is_my_turn) {
+      } else if (!g.is_my_turn && !isSolo) {
         // Check if bot game - trigger bot play
         if (g.is_bot_game) {
           setGamePhase('bot_countdown');
@@ -66,16 +68,49 @@ export default function Game() {
         }
       } else {
         const currentRound = g.rounds?.find(r => r.round_number === g.current_round);
-        // Check if there are opponent answers to playback first
-        const prevRound = g.rounds?.find(r => r.round_number === g.current_round - 1);
-        if (prevRound && prevRound.opponent_answers && prevRound.opponent_answers.length > 0 && prevRound.questions?.length > 0) {
-          setPlaybackAnswers({ answers: prevRound.opponent_answers, questions: prevRound.questions, round: prevRound.round_number });
-          setPlaybackIndex(0);
-          setGamePhase('playback');
-          return;
+        // Check if there are opponent answers to playback first (not for solo games)
+        if (!isSolo) {
+          const prevRound = g.rounds?.find(r => r.round_number === g.current_round - 1);
+          if (prevRound && prevRound.opponent_answers && prevRound.opponent_answers.length > 0 && prevRound.questions?.length > 0) {
+            setPlaybackAnswers({ answers: prevRound.opponent_answers, questions: prevRound.questions, round: prevRound.round_number });
+            setPlaybackIndex(0);
+            setGamePhase('playback');
+            return;
+          }
         }
-        if (currentRound && currentRound.category_selected) {
-          setGamePhase('waiting');
+
+        if (currentRound && currentRound.category_selected && currentRound.questions?.length > 0) {
+          // Round has category but user may need to resume answering
+          const myAnswered = (currentRound.my_answers || []).length;
+          if (myAnswered < 3) {
+            // Resume: load questions and skip already answered ones
+            try {
+              const catResp = await games.selectCategory(gameId, currentRound.category_selected);
+              setCurrentQuestions(catResp.data.questions);
+              setCurrentQuestionIndex(myAnswered);
+              setSelectedAnswer(null);
+              setFeedback(null);
+              setGamePhase('question');
+              setStartTime(Date.now());
+              setTimeLeft(TIMER_DURATION);
+            } catch {
+              // If select-category fails, just go to category selection
+              loadCategories();
+              setGamePhase('category_selection');
+            }
+          } else {
+            // All answers submitted for this round, waiting for next phase
+            if (isSolo) {
+              // Solo game: auto-advance to next category
+              setSelectedAnswer(null);
+              setFeedback(null);
+              setCurrentQuestions([]);
+              setCurrentQuestionIndex(0);
+              handleCategorySelect('Club');
+            } else {
+              setGamePhase('waiting');
+            }
+          }
         } else {
           // Fresh round - reset all question state
           setSelectedAnswer(null);
