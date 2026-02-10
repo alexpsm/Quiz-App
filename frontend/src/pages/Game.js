@@ -135,7 +135,6 @@ export default function Game() {
 
   useEffect(() => {
     loadGame();
-    loadCategories();
   }, [gameId, loadGame]);
 
   // 3-hour turn deadline countdown
