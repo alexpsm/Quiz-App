@@ -2662,6 +2662,59 @@ async def matchmaking_bot_fallback(current_user: User = Depends(get_current_user
     return {"game_id": game.id, "opponent": BOT_USERNAME, "is_bot": True}
 
 
+# ========== ACHIEVEMENT ENDPOINTS ==========
+
+@api_router.get("/achievements")
+async def get_all_achievements():
+    """Get list of all available achievements"""
+    return [{"id": k, **v} for k, v in ACHIEVEMENTS.items()]
+
+@api_router.get("/achievements/me")
+async def get_my_achievements(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Get current user's earned achievements"""
+    result = await db.execute(
+        select(UserAchievement).where(UserAchievement.user_id == current_user.user_id).order_by(UserAchievement.earned_at.desc())
+    )
+    earned = result.scalars().all()
+    
+    earned_list = []
+    for ua in earned:
+        if ua.achievement_id in ACHIEVEMENTS:
+            earned_list.append({
+                "id": ua.achievement_id,
+                "earned_at": ua.earned_at.isoformat() if ua.earned_at else None,
+                **ACHIEVEMENTS[ua.achievement_id]
+            })
+    
+    return {
+        "earned": earned_list,
+        "total_earned": len(earned_list),
+        "total_available": len(ACHIEVEMENTS)
+    }
+
+@api_router.get("/users/{user_id}/achievements")
+async def get_user_achievements(user_id: str, db: AsyncSession = Depends(get_db)):
+    """Get a specific user's earned achievements (public view)"""
+    result = await db.execute(
+        select(UserAchievement).where(UserAchievement.user_id == user_id).order_by(UserAchievement.earned_at.desc())
+    )
+    earned = result.scalars().all()
+    
+    earned_list = []
+    for ua in earned:
+        if ua.achievement_id in ACHIEVEMENTS:
+            earned_list.append({
+                "id": ua.achievement_id,
+                "earned_at": ua.earned_at.isoformat() if ua.earned_at else None,
+                **ACHIEVEMENTS[ua.achievement_id]
+            })
+    
+    return {
+        "earned": earned_list,
+        "total_earned": len(earned_list)
+    }
+
+
 app.include_router(api_router)
 
 # Serve uploaded files
