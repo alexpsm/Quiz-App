@@ -118,6 +118,46 @@ def create_jwt_token(user_id: str) -> str:
 def generate_invite_code() -> str:
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
+def calculate_elo_change(player_rank: int, opponent_rank: int, winner_is_p1: bool, score_diff: int = 0) -> tuple:
+    """
+    Calculate ELO rating changes for both players after a match.
+    
+    Uses a simplified ELO system:
+    - K-factor of 32 (standard for most games)
+    - Expected score based on rating difference
+    - Small bonus/penalty based on score difference
+    
+    Returns: (player1_delta, player2_delta)
+    """
+    K = 32  # Base K-factor
+    
+    # Calculate expected scores
+    expected_p1 = 1 / (1 + 10 ** ((opponent_rank - player_rank) / 400))
+    expected_p2 = 1 - expected_p1
+    
+    # Actual scores (1 for win, 0 for loss, 0.5 for draw)
+    if winner_is_p1:
+        actual_p1 = 1.0
+        actual_p2 = 0.0
+    else:
+        actual_p1 = 0.0
+        actual_p2 = 1.0
+    
+    # Calculate base ELO changes
+    delta_p1 = K * (actual_p1 - expected_p1)
+    delta_p2 = K * (actual_p2 - expected_p2)
+    
+    # Add bonus based on score difference (max 10 extra points)
+    score_bonus = min(10, score_diff // 50)
+    if winner_is_p1:
+        delta_p1 += score_bonus
+        delta_p2 -= score_bonus // 2
+    else:
+        delta_p2 += score_bonus
+        delta_p1 -= score_bonus // 2
+    
+    return (int(round(delta_p1)), int(round(delta_p2)))
+
 async def get_current_user(db: AsyncSession = Depends(get_db), session_token: Optional[str] = Cookie(None), authorization: Optional[str] = Header(None)) -> User:
     token = session_token
     if not token and authorization and authorization.startswith('Bearer '):
