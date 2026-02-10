@@ -210,6 +210,9 @@ export default function Game() {
       if (response.data.ball_knowledge_update) {
         setBkUpdate(response.data.ball_knowledge_update);
       }
+      if (response.data.credits_won) {
+        setCreditsWon(response.data.credits_won);
+      }
       setBotAnswers(response.data.bot_answers);
       setBotAnswerIndex(0);
       setGamePhase('bot_live');
