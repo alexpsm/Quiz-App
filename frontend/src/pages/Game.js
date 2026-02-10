@@ -289,6 +289,9 @@ export default function Game() {
       if (response.data.ball_knowledge_update) {
         setBkUpdate(response.data.ball_knowledge_update);
       }
+      if (response.data.achievements_earned) {
+        setAchievementsEarned(prev => [...prev, ...response.data.achievements_earned]);
+      }
 
       setFeedback({ ...response.data, _questionIndex: qIndex });
       setGamePhase('feedback');
