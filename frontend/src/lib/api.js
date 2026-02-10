@@ -42,7 +42,7 @@ export const questions = {
   list: (category, limit = 100) => api.get(`/questions${category ? `?category=${category}` : ''}`, { params: { limit } }),
   create: (data, password) => api.post('/questions', data, { params: { password } }),
   categories: () => api.get('/questions/categories'),
-  randomClubs: () => api.get('/questions/random-clubs'),
+  randomCategories: () => api.get('/questions/random-categories'),
 };
 
 export const games = {
