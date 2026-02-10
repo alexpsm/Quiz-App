@@ -122,6 +122,21 @@ export default function Game() {
           // For Club Challenge mode, auto-select "Club" category
           if (g.status === 'club_challenge') {
             handleCategorySelect('Club');
+          } else if (g.challenge_id) {
+            // Challenge game: auto-select the challenge topic
+            try {
+              const chRes = await challengesApi.weekly();
+              const ch = chRes.data.find(c => c.id === g.challenge_id);
+              if (ch) {
+                handleCategorySelect(ch.topic);
+              } else {
+                await loadCategories();
+                setGamePhase('category_selection');
+              }
+            } catch {
+              await loadCategories();
+              setGamePhase('category_selection');
+            }
           } else {
             await loadCategories();
             setGamePhase('category_selection');
