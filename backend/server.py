@@ -400,7 +400,8 @@ async def process_session(session_id: str, db: AsyncSession = Depends(get_db)):
         db.add(session)
         await db.commit()
         
-        return {
+        # Return response with cookie set
+        json_response = JSONResponse(content={
             "session_token": session_token,
             "user": {
                 "user_id": user.user_id,
@@ -412,7 +413,17 @@ async def process_session(session_id: str, db: AsyncSession = Depends(get_db)):
                 "skill_rank": user.skill_rank,
                 "credits": user.credits
             }
-        }
+        })
+        json_response.set_cookie(
+            key="session_token",
+            value=session_token,
+            httponly=True,
+            secure=True,
+            samesite="none",
+            max_age=7*24*60*60,
+            path="/"
+        )
+        return json_response
     except Exception as e:
         logger.error(f"Session processing error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
