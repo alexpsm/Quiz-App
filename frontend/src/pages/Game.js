@@ -66,10 +66,9 @@ export default function Game() {
       if (g.status === 'finished') {
         setGamePhase('game_over');
       } else if (!g.is_my_turn && !isSolo) {
-        // Check if bot game - show countdown with Instagram carousel before bot plays
+        // Check if bot game - go straight to bot answering with Instagram carousel
         if (g.is_bot_game) {
-          setBotCountdown(5); // Short countdown to show carousel
-          setGamePhase('bot_countdown');
+          triggerBotPlay();
         } else {
           setGamePhase('waiting');
         }
