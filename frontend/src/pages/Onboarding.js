@@ -5,6 +5,9 @@ import { Phone, Camera } from 'lucide-react';
 import { users, clubs } from '../lib/api';
 import { PoweredByScore90 } from '../components/Score90Logo';
 import { useAuth } from '../context/AuthContext';
+import {
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue
+} from '../components/ui/select';
 
 const FOOTBALL_AVATARS = [
   { seed: 'Goalkeeper', label: 'Keeper' },
@@ -40,7 +43,7 @@ const COUNTRIES = [
   "Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
 ];
 
-const AGES = Array.from({ length: 88 }, (_, i) => i + 12);
+const AGES = Array.from({ length: 88 }, (_, i) => String(i + 12));
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -66,8 +69,8 @@ export default function Onboarding() {
     try {
       const response = await clubs.getAll();
       setClubsByLeague(response.data);
-    } catch (error) {
-      console.error('Failed to load clubs:', error);
+    } catch (err) {
+      console.error('Failed to load clubs:', err);
     }
   };
 
@@ -120,7 +123,9 @@ export default function Onboarding() {
     }
   };
 
-  const selectClass = "w-full bg-black/50 border-2 border-neon-blue/30 focus:border-neon-pink focus:ring-2 focus:ring-neon-pink/50 h-12 rounded-sm text-white px-4 outline-none transition-all appearance-none";
+  const triggerClass = "w-full bg-black/50 border-2 border-neon-blue/30 focus:border-neon-pink focus:ring-2 focus:ring-neon-pink/50 h-12 rounded-sm text-white px-4 outline-none transition-all data-[placeholder]:text-white/30";
+  const contentClass = "bg-[#1a1a2e] border-2 border-neon-blue/30 text-white max-h-[300px]";
+  const itemClass = "text-white focus:bg-neon-blue/20 focus:text-neon-blue cursor-pointer";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-[#1a1a2e] to-background flex items-center justify-center p-5">
@@ -147,15 +152,12 @@ export default function Onboarding() {
                 Choose Your Player
               </label>
               <div className="grid grid-cols-5 gap-2">
-                {/* Upload button */}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   data-testid="avatar-upload-btn"
                   className={`aspect-square rounded-lg border-2 border-dashed transition-all flex flex-col items-center justify-center gap-0.5 ${
-                    customAvatarPreview
-                      ? 'border-neon-pink shadow-neon-pink'
-                      : 'border-white/30 hover:border-neon-blue/60'
+                    customAvatarPreview ? 'border-neon-pink shadow-neon-pink' : 'border-white/30 hover:border-neon-blue/60'
                   }`}
                 >
                   {customAvatarPreview ? (
@@ -167,16 +169,8 @@ export default function Onboarding() {
                     </>
                   )}
                 </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  data-testid="avatar-file-input"
-                />
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" data-testid="avatar-file-input" />
 
-                {/* Football avatars row 1 */}
                 {FOOTBALL_AVATARS.slice(0, 4).map((avatar, index) => (
                   <button
                     key={avatar.seed}
@@ -184,23 +178,16 @@ export default function Onboarding() {
                     onClick={() => { setSelectedAvatar(index); setCustomAvatarFile(null); setCustomAvatarPreview(null); }}
                     data-testid={`avatar-${index}`}
                     className={`aspect-square rounded-lg border-2 transition-all relative overflow-hidden ${
-                      selectedAvatar === index && !customAvatarPreview
-                        ? 'border-neon-pink shadow-neon-pink'
-                        : 'border-white/20 hover:border-neon-blue/40'
+                      selectedAvatar === index && !customAvatarPreview ? 'border-neon-pink shadow-neon-pink' : 'border-white/20 hover:border-neon-blue/40'
                     }`}
                   >
-                    <img
-                      src={getAvatarUrl(avatar.seed)}
-                      alt={avatar.label}
-                      className="w-full h-full rounded-lg"
-                    />
+                    <img src={getAvatarUrl(avatar.seed)} alt={avatar.label} className="w-full h-full rounded-lg" />
                     <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[8px] text-center text-gray-300 py-0.5 font-bold uppercase">{avatar.label}</span>
                   </button>
                 ))}
               </div>
-              {/* Row 2 */}
               <div className="grid grid-cols-5 gap-2 mt-2">
-                <div></div>
+                <div />
                 {FOOTBALL_AVATARS.slice(4).map((avatar, index) => (
                   <button
                     key={avatar.seed}
@@ -208,16 +195,10 @@ export default function Onboarding() {
                     onClick={() => { setSelectedAvatar(index + 4); setCustomAvatarFile(null); setCustomAvatarPreview(null); }}
                     data-testid={`avatar-${index + 4}`}
                     className={`aspect-square rounded-lg border-2 transition-all relative overflow-hidden ${
-                      selectedAvatar === index + 4 && !customAvatarPreview
-                        ? 'border-neon-pink shadow-neon-pink'
-                        : 'border-white/20 hover:border-neon-blue/40'
+                      selectedAvatar === index + 4 && !customAvatarPreview ? 'border-neon-pink shadow-neon-pink' : 'border-white/20 hover:border-neon-blue/40'
                     }`}
                   >
-                    <img
-                      src={getAvatarUrl(avatar.seed)}
-                      alt={avatar.label}
-                      className="w-full h-full rounded-lg"
-                    />
+                    <img src={getAvatarUrl(avatar.seed)} alt={avatar.label} className="w-full h-full rounded-lg" />
                     <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[8px] text-center text-gray-300 py-0.5 font-bold uppercase">{avatar.label}</span>
                   </button>
                 ))}
@@ -226,9 +207,7 @@ export default function Onboarding() {
 
             {/* Username */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
-                Username
-              </label>
+              <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">Username</label>
               <input
                 type="text"
                 data-testid="username-input"
@@ -243,27 +222,26 @@ export default function Onboarding() {
               <p className="text-xs text-gray-500 mt-1">3-20 characters, lowercase letters, numbers, underscores</p>
             </div>
 
-            {/* Favorite Club */}
+            {/* Favourite Club */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
                 Select Your Favourite Club
               </label>
-              <select
-                data-testid="club-select"
-                value={favoriteClub}
-                onChange={(e) => setFavoriteClub(e.target.value)}
-                className={selectClass}
-                required
-              >
-                <option value="" className="bg-card">Select a club...</option>
-                {Object.entries(clubsByLeague).map(([league, clubList]) => (
-                  <optgroup key={league} label={league} className="bg-card">
-                    {clubList.map((club) => (
-                      <option key={club} value={club} className="bg-card">{club}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+              <Select value={favoriteClub} onValueChange={setFavoriteClub} data-testid="club-select-wrapper">
+                <SelectTrigger className={triggerClass} data-testid="club-select">
+                  <SelectValue placeholder="Select a club..." />
+                </SelectTrigger>
+                <SelectContent className={contentClass}>
+                  {Object.entries(clubsByLeague).map(([league, clubList]) => (
+                    <SelectGroup key={league}>
+                      <SelectLabel className="text-neon-pink font-bold uppercase text-xs tracking-wider px-2 py-2">{league}</SelectLabel>
+                      {clubList.map((club) => (
+                        <SelectItem key={club} value={club} className={itemClass}>{club}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Country */}
@@ -271,45 +249,37 @@ export default function Onboarding() {
               <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
                 Country of Residence
               </label>
-              <select
-                data-testid="country-select"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className={selectClass}
-                required
-              >
-                <option value="" className="bg-card">Select your country...</option>
-                {COUNTRIES.map((c) => (
-                  <option key={c} value={c} className="bg-card">{c}</option>
-                ))}
-              </select>
+              <Select value={country} onValueChange={setCountry}>
+                <SelectTrigger className={triggerClass} data-testid="country-select">
+                  <SelectValue placeholder="Select your country..." />
+                </SelectTrigger>
+                <SelectContent className={contentClass}>
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c} value={c} className={itemClass}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Age & Phone */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
-                  Age
-                </label>
-                <select
-                  data-testid="age-select"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
-                  className={selectClass}
-                  required
-                >
-                  <option value="" className="bg-card">Age</option>
-                  {AGES.map((a) => (
-                    <option key={a} value={a} className="bg-card">{a}</option>
-                  ))}
-                </select>
+                <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">Age</label>
+                <Select value={age} onValueChange={setAge}>
+                  <SelectTrigger className={triggerClass} data-testid="age-select">
+                    <SelectValue placeholder="Age" />
+                  </SelectTrigger>
+                  <SelectContent className={contentClass}>
+                    {AGES.map((a) => (
+                      <SelectItem key={a} value={a} className={itemClass}>{a}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
-                  Mobile Phone
-                </label>
+                <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">Mobile Phone</label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-3.5 text-gray-500" size={18} />
+                  <Phone className="absolute left-3 top-3.5 text-gray-500 z-10" size={18} />
                   <input
                     type="tel"
                     data-testid="phone-input"
