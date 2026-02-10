@@ -424,13 +424,18 @@ export default function Game() {
 
             {/* FEEDBACK */}
             {gamePhase === 'feedback' && feedback && (
-              <motion.div key="feedback" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-6 py-8">
+              <motion.div key="feedback" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-6 py-8" data-testid="answer-feedback">
                 <div className={`w-32 h-32 rounded-full mx-auto flex items-center justify-center ${feedback.is_correct ? 'bg-neon-yellow/20 border-4 border-neon-yellow shadow-neon-yellow' : 'bg-destructive/20 border-4 border-destructive'}`}>
                   <span className="text-6xl font-black">{feedback.is_correct ? '\u2713' : '\u2717'}</span>
                 </div>
                 <div>
-                  <h2 className={`text-3xl font-extrabold tracking-tighter uppercase ${feedback.is_correct ? 'text-neon-yellow' : 'text-destructive'}`}>{feedback.is_correct ? 'Correct!' : 'Wrong'}</h2>
+                  <h2 className={`text-3xl font-extrabold tracking-tighter uppercase ${feedback.is_correct ? 'text-neon-yellow' : 'text-destructive'}`} data-testid="feedback-result">{feedback.is_correct ? 'Correct!' : 'Wrong'}</h2>
                   <p className="text-2xl font-black tracking-tighter text-neon-blue mt-2">+{feedback.score} points</p>
+                  {!feedback.is_correct && feedback.correct_option && currentQuestions[currentQuestionIndex] && (
+                    <p className="text-sm text-gray-400 mt-3" data-testid="correct-answer-reveal">
+                      Correct answer: <span className="text-neon-yellow font-bold">{currentQuestions[currentQuestionIndex][`option_${feedback.correct_option.toLowerCase()}`]}</span> ({feedback.correct_option})
+                    </p>
+                  )}
                 </div>
               </motion.div>
             )}
