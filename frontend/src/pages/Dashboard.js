@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [ranks, setRanks] = useState(null);
   const [clubWar, setClubWar] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAllGames, setShowAllGames] = useState(false);
 
   useEffect(() => {
     loadData();
