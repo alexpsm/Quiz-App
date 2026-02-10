@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, ShoppingBag, User } from 'lucide-react';
+import { Home, Search, ShoppingBag, User, Swords } from 'lucide-react';
 
 export const BottomNav = () => {
   const location = useLocation();
@@ -8,6 +8,7 @@ export const BottomNav = () => {
   const tabs = [
     { icon: Home, label: 'Home', path: '/dashboard', testId: 'nav-home' },
     { icon: Search, label: 'Play', path: '/matchmaking', testId: 'nav-matchmaking' },
+    { icon: Swords, label: 'Challenge', path: '/challenge', testId: 'nav-challenge' },
     { icon: ShoppingBag, label: 'Store', path: '/store', testId: 'nav-store' },
     { icon: User, label: 'Profile', path: '/profile', testId: 'nav-profile' },
   ];
