@@ -151,30 +151,35 @@ class PaymentTransaction(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-class ClubWar(Base):
-    __tablename__ = 'club_wars'
+
+class CareerPathChallenge(Base):
+    """Daily career path challenge - guess the player from their career history"""
+    __tablename__ = 'career_path_challenges'
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    week_start = Column(DateTime(timezone=True), nullable=False, index=True)
-    week_end = Column(DateTime(timezone=True), nullable=False)
-    status = Column(String(20), default='active')  # 'active' or 'completed'
+    player_name = Column(String(200), nullable=False)
+    career_clubs = Column(JSON, nullable=False)  # List of {club, years, order}
+    hints = Column(JSON, nullable=True)  # Additional hints like nationality, position
+    difficulty = Column(String(20), default='normal')  # easy, normal, hard
+    active_date = Column(Date, nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
-class ClubWarContribution(Base):
-    __tablename__ = 'club_war_contributions'
+
+class CareerPathAttempt(Base):
+    """User attempts at career path challenges"""
+    __tablename__ = 'career_path_attempts'
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    club_war_id = Column(String(36), ForeignKey('club_wars.id', ondelete='CASCADE'), nullable=False, index=True)
     user_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False, index=True)
-    club_name = Column(String(100), nullable=False, index=True)
-    points = Column(Integer, default=0)
-    games_played = Column(Integer, default=0)
+    challenge_id = Column(String(36), ForeignKey('career_path_challenges.id', ondelete='CASCADE'), nullable=False)
+    guesses = Column(JSON, default=list)  # List of guesses made
+    clubs_revealed = Column(Integer, default=1)  # How many clubs have been shown
+    solved = Column(Boolean, default=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     __table_args__ = (
-        Index('idx_clubwar_user', 'club_war_id', 'user_id'),
-        Index('idx_clubwar_club', 'club_war_id', 'club_name'),
+        Index('idx_career_user_challenge', 'user_id', 'challenge_id', unique=True),
     )
 
 
