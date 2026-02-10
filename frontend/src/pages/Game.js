@@ -230,6 +230,9 @@ export default function Game() {
       if (response.data.credits_won) {
         setCreditsWon(response.data.credits_won);
       }
+      if (response.data.tier_update) {
+        setTierUpdate(response.data.tier_update);
+      }
       setBotAnswers(response.data.bot_answers);
       setBotAnswerIndex(0);
       setGamePhase('bot_live');
