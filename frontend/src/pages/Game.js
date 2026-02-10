@@ -282,7 +282,8 @@ export default function Game() {
 
   const handleTimeout = () => {
     if (selectedAnswer) return;
-    handleAnswerSelect('');
+    // Submit timeout as an intentionally wrong answer
+    handleAnswerSelect('X');
   };
 
   const advancePlayback = () => {
