@@ -51,12 +51,19 @@ export const games = {
   clubChallenge: () => api.post('/games/club-challenge'),
   createInvite: () => api.post('/games/invite'),
   joinGame: (inviteCode) => api.post(`/games/join/${inviteCode}`),
+  createInviteBet: (betAmount) => api.post(`/games/invite-bet?bet_amount=${betAmount}`),
+  joinBetGame: (inviteCode) => api.post(`/games/join-bet/${inviteCode}`),
   list: () => api.get('/games'),
   history: (limit = 20) => api.get(`/games/history?limit=${limit}`),
   get: (gameId) => api.get(`/games/${gameId}`),
   selectCategory: (gameId, category) => api.post(`/games/${gameId}/select-category`, null, { params: { category } }),
   submitAnswer: (gameId, data) => api.post(`/games/${gameId}/answer`, data),
   botPlay: (gameId) => api.post(`/games/${gameId}/bot-play`),
+};
+
+export const challengesApi = {
+  weekly: () => api.get('/challenges/weekly'),
+  start: (challengeId) => api.post(`/challenges/${challengeId}/start`),
 };
 
 export const leagues = {
