@@ -858,7 +858,12 @@ async def get_random_categories(db: AsyncSession = Depends(get_db)):
     import random
     from clubs_data import get_all_clubs
 
-    result = await db.execute(select(Question.category).where(Question.category != "Club").distinct())
+    result = await db.execute(
+        select(Question.category, func.count(Question.id))
+        .where(Question.category != "Club")
+        .group_by(Question.category)
+        .having(func.count(Question.id) >= 3)
+    )
     topics = [row[0] for row in result.all()]
     clubs = get_all_clubs()
 
