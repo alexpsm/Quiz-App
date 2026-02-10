@@ -545,71 +545,65 @@ export default function Game() {
               </motion.div>
             )}
 
-            {/* BOT LIVE ANSWERING */}
+            {/* BOT LIVE ANSWERING - Compact with Instagram Carousel */}
             {gamePhase === 'bot_live' && botAnswers && botAnswers[botAnswerIndex] && (
-              <motion.div key="bot_live" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <img src={opponent?.avatar} alt={BOT_USERNAME} className="w-10 h-10 rounded-full border-2 border-neon-blue" />
-                  <div>
-                    <p className="text-sm font-bold text-neon-blue uppercase">{BOT_USERNAME} is answering</p>
-                    <p className="text-xs text-gray-500">Question {botAnswerIndex + 1}/3</p>
-                  </div>
-                  <Eye className="text-neon-pink ml-auto" size={20} />
-                </div>
-
-                <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-6">
-                  <p className="text-lg font-bold leading-relaxed text-white">{botAnswers[botAnswerIndex].question_text}</p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3">
-                  {['A', 'B', 'C', 'D'].map((label) => {
-                    const optKey = `option_${label.toLowerCase()}`;
-                    const botAnswer = botAnswers[botAnswerIndex];
-                    const isSelected = botPhaseStep === 'answered' && botAnswer.selected_option === label;
-                    const isCorrect = botPhaseStep === 'answered' && botAnswer.correct_option === label;
-
-                    let borderClass = 'border-white/10';
-                    if (botPhaseStep === 'answered') {
-                      if (isCorrect) borderClass = 'border-neon-yellow bg-neon-yellow/10';
-                      else if (isSelected && !botAnswer.is_correct) borderClass = 'border-destructive bg-destructive/10';
-                    }
-
-                    return (
-                      <div key={label} className={`border-2 rounded-lg p-4 transition-all ${borderClass}`}>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center flex-shrink-0">
-                            <span className="font-bold text-white">{label}</span>
-                          </div>
-                          <p className="text-white font-medium flex-1">{botAnswer[optKey]}</p>
-                          {botPhaseStep === 'answered' && isSelected && (
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${botAnswer.is_correct ? 'bg-neon-yellow' : 'bg-destructive'}`}>
-                              <span className="text-xs font-bold text-white">{botAnswer.is_correct ? '\u2713' : '\u2717'}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {botPhaseStep === 'thinking' && (
-                  <div className="text-center">
-                    <div className="inline-flex items-center gap-2 bg-card border border-neon-blue/30 rounded-full px-4 py-2">
-                      <div className="w-2 h-2 bg-neon-blue rounded-full animate-pulse" />
-                      <div className="w-2 h-2 bg-neon-blue rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                      <div className="w-2 h-2 bg-neon-blue rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-                      <span className="text-xs text-gray-400 ml-1">Thinking...</span>
+              <motion.div key="bot_live" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+                {/* Compact Bot Answer Section */}
+                <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <img src={opponent?.avatar} alt={BOT_USERNAME} className="w-8 h-8 rounded-full border-2 border-neon-blue" />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-neon-blue uppercase">{BOT_USERNAME}</p>
+                      <p className="text-[10px] text-gray-500">Q{botAnswerIndex + 1}/3</p>
                     </div>
+                    {botPhaseStep === 'thinking' && (
+                      <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 bg-neon-blue rounded-full animate-pulse" />
+                        <div className="w-1.5 h-1.5 bg-neon-blue rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                        <div className="w-1.5 h-1.5 bg-neon-blue rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                      </div>
+                    )}
+                    {botPhaseStep === 'answered' && (
+                      <span className={`text-xs font-bold ${botAnswers[botAnswerIndex].is_correct ? 'text-neon-yellow' : 'text-destructive'}`}>
+                        {botAnswers[botAnswerIndex].is_correct ? `+${botAnswers[botAnswerIndex].score}` : '✗'}
+                      </span>
+                    )}
                   </div>
-                )}
 
-                {botPhaseStep === 'answered' && (
-                  <div className="text-center">
-                    <p className={`text-lg font-bold ${botAnswers[botAnswerIndex].is_correct ? 'text-neon-yellow' : 'text-destructive'}`}>
-                      {botAnswers[botAnswerIndex].is_correct ? `Correct! +${botAnswers[botAnswerIndex].score}` : 'Wrong!'}
-                    </p>
+                  {/* Compact Question */}
+                  <p className="text-sm font-medium text-white mb-2 line-clamp-2">{botAnswers[botAnswerIndex].question_text}</p>
+
+                  {/* Compact Answer Options - 2x2 Grid */}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {['A', 'B', 'C', 'D'].map((label) => {
+                      const optKey = `option_${label.toLowerCase()}`;
+                      const botAnswer = botAnswers[botAnswerIndex];
+                      const isSelected = botPhaseStep === 'answered' && botAnswer.selected_option === label;
+                      const isCorrect = botPhaseStep === 'answered' && botAnswer.correct_option === label;
+
+                      let bgClass = 'bg-black/30 border-white/10';
+                      if (botPhaseStep === 'answered') {
+                        if (isCorrect) bgClass = 'bg-neon-yellow/20 border-neon-yellow';
+                        else if (isSelected && !botAnswer.is_correct) bgClass = 'bg-destructive/20 border-destructive';
+                      }
+
+                      return (
+                        <div key={label} className={`border rounded px-2 py-1.5 ${bgClass}`}>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-gray-400 w-4">{label}</span>
+                            <p className="text-[11px] text-white truncate flex-1">{botAnswer[optKey]}</p>
+                            {botPhaseStep === 'answered' && isSelected && (
+                              <span className="text-[10px]">{botAnswer.is_correct ? '✓' : '✗'}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
+
+                {/* Instagram Carousel - shown while bot is answering */}
+                <InstagramCarousel autoPlay={true} interval={5000} />
               </motion.div>
             )}
 
