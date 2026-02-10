@@ -277,6 +277,11 @@ export default function Matchmaking() {
                     </button>
                   </div>
                 )}
+                
+                {/* Ad shown while waiting for match */}
+                <div className="mt-3 flex justify-center">
+                  <InlineAd type="flashscore" />
+                </div>
               </div>
               
               <button
