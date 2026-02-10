@@ -23,14 +23,14 @@ export default function Profile() {
 
   const loadData = async () => {
     try {
-      const [lbRes, histRes, rankRes] = await Promise.all([
+      const [lbRes, histRes, rankRes] = await Promise.allSettled([
         users.leaderboard(10),
         games.history(10),
         users.myRank()
       ]);
-      setLeaderboard(lbRes.data);
-      setGameHistory(histRes.data);
-      setRanks(rankRes.data);
+      if (lbRes.status === 'fulfilled') setLeaderboard(lbRes.value.data);
+      if (histRes.status === 'fulfilled') setGameHistory(histRes.value.data);
+      if (rankRes.status === 'fulfilled') setRanks(rankRes.value.data);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
