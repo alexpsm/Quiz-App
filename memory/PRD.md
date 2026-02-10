@@ -95,6 +95,16 @@ QuizBall is a football quiz game with skill-based matchmaking and credit betting
 - "Follow" link and "While you wait" context messaging
 - Component: `/app/frontend/src/components/InstagramCarousel.js`
 
+### Career Mode Challenge (NEW - Feb 2025)
+- **Daily "guess the footballer" game** from career path clues
+- Players see clubs one at a time and try to guess the player
+- Wrong guesses reveal more clubs from the career
+- **10 initial players**: Zlatan, Ronaldo, Henry, Beckham, Anelka, Eto'o, Ronaldinho, Rooney, Fabregas, Robinho
+- Difficulty levels: Easy (6 clubs), Normal (8 clubs), Hard (10+ clubs)
+- Credit rewards based on how few guesses used (max 50, min 10)
+- Hints shown after half the career is revealed (nationality, position)
+- Replaced "Weekly Club Wars" feature
+
 ## Future/Backlog
 - Social OAuth (Facebook, Twitter, Apple)
 - Refactor server.py into Flask Blueprints
