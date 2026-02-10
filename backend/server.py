@@ -858,15 +858,22 @@ async def get_random_categories(db: AsyncSession = Depends(get_db)):
     import random
     from clubs_data import get_all_clubs
 
-    # Get non-Club topic categories that have questions
     result = await db.execute(select(Question.category).where(Question.category != "Club").distinct())
     topics = [row[0] for row in result.all()]
-
     clubs = get_all_clubs()
 
-    # Build a pool: all topics + all clubs, then pick 3 unique
-    pool = topics + clubs
-    return random.sample(pool, min(3, len(pool)))
+    # Pick 3 items: each slot has ~40% chance of being a topic, ~60% club
+    picks = []
+    for _ in range(3):
+        if topics and (random.random() < 0.4 or not clubs):
+            pick = random.choice(topics)
+        else:
+            pick = random.choice(clubs)
+        # Avoid duplicates
+        while pick in picks:
+            pick = random.choice(topics + clubs)
+        picks.append(pick)
+    return picks
 
 # Game Endpoints
 BOT_USERNAME = "TheScore90Bot"
