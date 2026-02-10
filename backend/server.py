@@ -1253,13 +1253,15 @@ async def get_game(game_id: str, current_user: User = Depends(get_current_user),
             "user_id": game.player1.user_id,
             "username": game.player1.username,
             "avatar": game.player1.avatar,
-            "skill_rank": game.player1.skill_rank
+            "skill_rank": game.player1.skill_rank,
+            "player_tier": game.player1.player_tier or 1
         },
         "player2": {
             "user_id": game.player2.user_id,
             "username": game.player2.username,
             "avatar": game.player2.avatar,
-            "skill_rank": game.player2.skill_rank
+            "skill_rank": game.player2.skill_rank,
+            "player_tier": game.player2.player_tier or 1
         },
         "current_round": game.current_round,
         "status": game.status,
