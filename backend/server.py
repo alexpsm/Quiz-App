@@ -1257,35 +1257,64 @@ async def select_category(game_id: str, category: str, current_user: User = Depe
     if game.turn_player_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="Not your turn")
     
-    # For Club Challenge mode, filter questions by user's favorite club
+    # Get question IDs this user has seen in the last 3 months
+    three_months_ago = datetime.now(timezone.utc) - timedelta(days=90)
+    seen_result = await db.execute(
+        select(UserQuestionHistory.question_id).where(
+            UserQuestionHistory.user_id == current_user.user_id,
+            UserQuestionHistory.served_at >= three_months_ago
+        )
+    )
+    seen_ids = {row[0] for row in seen_result.all()}
+    
+    # Build base query with exclusion of seen questions
     if game.status == 'club_challenge' and current_user.favorite_club:
-        # Get questions that mention the user's favorite club
         club_name = current_user.favorite_club
+        base_filter = [
+            Question.category == "Club",
+            Question.question_text.ilike(f"%{club_name}%")
+        ]
+    else:
+        base_filter = [Question.category == category]
+    
+    # Try with exclusion first
+    exclusion = [Question.id.notin_(seen_ids)] if seen_ids else []
+    q_result = await db.execute(
+        select(Question).where(*base_filter, *exclusion).order_by(func.random()).limit(3)
+    )
+    questions = q_result.scalars().all()
+    
+    # Fallback for club challenge: broaden to all Club questions (still excluding seen)
+    if len(questions) < 3 and game.status == 'club_challenge':
         q_result = await db.execute(
-            select(Question).where(
-                Question.category == "Club",
-                Question.question_text.ilike(f"%{club_name}%")
-            ).order_by(func.random()).limit(3)
+            select(Question).where(Question.category == "Club", *exclusion).order_by(func.random()).limit(3)
         )
         questions = q_result.scalars().all()
-        
-        # Fallback: if not enough club-specific questions, get any Club questions
-        if len(questions) < 3:
+    
+    # Ultimate fallback: allow repeats if the pool is exhausted
+    if len(questions) < 3:
+        if game.status == 'club_challenge':
             q_result = await db.execute(
                 select(Question).where(Question.category == "Club").order_by(func.random()).limit(3)
             )
-            questions = q_result.scalars().all()
-    else:
-        # Regular game - get questions from selected category
-        q_result = await db.execute(
-            select(Question).where(Question.category == category).order_by(func.random()).limit(3)
-        )
+        else:
+            q_result = await db.execute(
+                select(Question).where(Question.category == category).order_by(func.random()).limit(3)
+            )
         questions = q_result.scalars().all()
     
     if len(questions) < 3:
         raise HTTPException(status_code=400, detail="Not enough questions in this category")
     
-    # Create or update round - check for existing first to prevent duplicates
+    # Record these questions in user history
+    for q in questions:
+        db.add(UserQuestionHistory(
+            id=str(uuid.uuid4()),
+            user_id=current_user.user_id,
+            question_id=q.id
+        ))
+    
+    # Create or update round
     round_result = await db.execute(
         select(GameRound).where(
             GameRound.game_id == game_id,
