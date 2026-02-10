@@ -941,6 +941,7 @@ async def get_random_categories(db: AsyncSession = Depends(get_db)):
 
 # Game Endpoints
 BOT_USERNAME = "TheScore90Bot"
+BOT_AVATAR = "https://customer-assets.emergentagent.com/job_d6d8626b-a5b2-4b68-bfb7-a1cde78903a3/artifacts/ip2vwr0v_Gemini_Generated_Image_c4gcrvc4gcrvc4gc.png"
 
 async def get_or_create_bot(db: AsyncSession) -> User:
     """Get or create the TheScore90Bot user"""
@@ -952,13 +953,16 @@ async def get_or_create_bot(db: AsyncSession) -> User:
             email="bot@score90.com",
             name="Score90 Bot",
             username=BOT_USERNAME,
-            avatar="https://api.dicebear.com/7.x/bottts/svg?seed=Score90Bot",
+            avatar=BOT_AVATAR,
             skill_rank=1000,
             is_admin=False,
         )
         db.add(bot)
         await db.commit()
         await db.refresh(bot)
+    elif bot.avatar != BOT_AVATAR:
+        bot.avatar = BOT_AVATAR
+        await db.commit()
     return bot
 
 @api_router.post("/games/quick-play")
