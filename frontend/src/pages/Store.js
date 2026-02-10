@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Coins, Zap, Crown, Check, Loader2, Trophy, Clock, Lock, Ticket } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { PoweredByScore90 } from '../components/Score90Logo';
+import { GoogleSportsAd } from '../components/GoogleAd';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 
