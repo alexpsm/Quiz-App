@@ -158,6 +158,65 @@ def calculate_elo_change(player_rank: int, opponent_rank: int, winner_is_p1: boo
     
     return (int(round(delta_p1)), int(round(delta_p2)))
 
+
+async def update_ball_knowledge(db: AsyncSession, game: Game, user: User):
+    """
+    Update a user's Ball Knowledge (skill_rank) after a game finishes.
+    
+    - Bot games: ELO vs bot (bot skill = user's skill), K reduced to 20
+    - PvP games: Full ELO (K=32) against opponent
+    - Solo/Club Challenge: Performance-based (score vs baseline of 600/1080)
+    
+    Returns: (old_rank, new_rank, delta) for the user
+    """
+    total_p1 = sum(r.player1_score for r in game.rounds)
+    total_p2 = sum(r.player2_score for r in game.rounds)
+    user_rank = user.skill_rank or 1000
+    old_rank = user_rank
+    is_solo = game.player1_id == game.player2_id
+    is_p1 = game.player1_id == user.user_id
+    user_score = total_p1 if is_p1 else total_p2
+    opp_score = total_p2 if is_p1 else total_p1
+    won = game.winner_id == user.user_id
+
+    if is_solo:
+        # Solo / Club Challenge: performance-based
+        # Max possible = 18 questions * 150 points = 2700, baseline ~ 900 (6 correct out of 18)
+        # Scale: above baseline gains, below loses
+        baseline = 900
+        performance_ratio = (user_score - baseline) / baseline  # range ~ -1.0 to +2.0
+        delta = int(round(15 * performance_ratio))  # max ~+30 / -15
+        delta = max(-15, min(30, delta))
+    elif game.is_bot_game:
+        # Bot games: bot's "skill" matches user, reduced K-factor
+        bot_skill = user_rank  # bot is calibrated to user
+        delta, _ = calculate_elo_change(user_rank, bot_skill, winner_is_p1=won, score_diff=abs(user_score - opp_score))
+        # Reduce impact: bot games worth ~60% of PvP
+        delta = int(round(delta * 0.6))
+    else:
+        # PvP: full ELO against real opponent
+        opp_result = await db.execute(
+            select(User).where(User.user_id == (game.player2_id if is_p1 else game.player1_id))
+        )
+        opponent = opp_result.scalar_one_or_none()
+        opp_rank = (opponent.skill_rank or 1000) if opponent else 1000
+
+        if is_p1:
+            p1_delta, p2_delta = calculate_elo_change(user_rank, opp_rank, winner_is_p1=won, score_diff=abs(user_score - opp_score))
+            delta = p1_delta
+            # Update opponent too
+            if opponent:
+                opponent.skill_rank = max(100, (opponent.skill_rank or 1000) + p2_delta)
+        else:
+            p1_delta, p2_delta = calculate_elo_change(opp_rank, user_rank, winner_is_p1=(not won), score_diff=abs(user_score - opp_score))
+            delta = p2_delta
+            if opponent:
+                opponent.skill_rank = max(100, (opponent.skill_rank or 1000) + p1_delta)
+
+    new_rank = max(100, user_rank + delta)
+    user.skill_rank = new_rank
+    return old_rank, new_rank, delta
+
 async def get_current_user(db: AsyncSession = Depends(get_db), session_token: Optional[str] = Cookie(None), authorization: Optional[str] = Header(None)) -> User:
     token = session_token
     if not token and authorization and authorization.startswith('Bearer '):
