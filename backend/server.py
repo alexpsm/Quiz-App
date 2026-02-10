@@ -1041,6 +1041,34 @@ async def get_game(game_id: str, current_user: User = Depends(get_current_user),
     my_score = sum(r.player1_score if game.player1_id == current_user.user_id else r.player2_score for r in game.rounds)
     opponent_score = sum(r.player2_score if game.player1_id == current_user.user_id else r.player1_score for r in game.rounds)
     
+    is_player1 = game.player1_id == current_user.user_id
+    
+    # Calculate turn deadline (3 hours for real players)
+    turn_deadline = None
+    if game.turn_started_at and game.status == 'active':
+        turn_deadline = (game.turn_started_at + timedelta(hours=3)).isoformat()
+    
+    # Build rounds data with opponent answers for playback
+    rounds_data = []
+    for r in sorted(game.rounds, key=lambda x: x.round_number):
+        rd = {
+            "round_number": r.round_number,
+            "category_selected": r.category_selected,
+            "player1_score": r.player1_score,
+            "player2_score": r.player2_score,
+        }
+        # Include opponent's answers for completed rounds (playback)
+        my_answers = r.player1_answers if is_player1 else r.player2_answers
+        opp_answers = r.player2_answers if is_player1 else r.player1_answers
+        rd["my_answers"] = my_answers or []
+        # Only show opponent answers after both sides answered this round
+        if len(my_answers or []) >= 3 and len(opp_answers or []) >= 3:
+            rd["opponent_answers"] = opp_answers
+        else:
+            rd["opponent_answers"] = []
+        rd["questions"] = r.questions or []
+        rounds_data.append(rd)
+    
     return {
         "id": game.id,
         "player1": {
@@ -1062,12 +1090,117 @@ async def get_game(game_id: str, current_user: User = Depends(get_current_user),
         "winner_id": game.winner_id,
         "my_score": my_score,
         "opponent_score": opponent_score,
-        "rounds": [{
-            "round_number": r.round_number,
-            "category_selected": r.category_selected,
-            "player1_score": r.player1_score,
-            "player2_score": r.player2_score
-        } for r in sorted(game.rounds, key=lambda x: x.round_number)]
+        "is_bot_game": game.is_bot_game or False,
+        "turn_started_at": game.turn_started_at.isoformat() if game.turn_started_at else None,
+        "turn_deadline": turn_deadline,
+        "rounds": rounds_data
+    }
+
+@api_router.post("/games/{game_id}/bot-play")
+async def bot_play(game_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Simulate the bot playing its turn. Returns the bot's answers for live playback."""
+    result = await db.execute(
+        select(Game).options(selectinload(Game.rounds)).where(Game.id == game_id)
+    )
+    game = result.scalar_one_or_none()
+    
+    if not game or not game.is_bot_game:
+        raise HTTPException(status_code=400, detail="Not a bot game")
+    
+    # Bot should be player2 and it should be the bot's turn
+    if game.turn_player_id != game.player2_id:
+        raise HTTPException(status_code=400, detail="Not the bot's turn")
+    
+    # Get current round
+    round_result = await db.execute(
+        select(GameRound).where(
+            GameRound.game_id == game_id,
+            GameRound.round_number == game.current_round
+        )
+    )
+    game_round = round_result.scalar_one_or_none()
+    
+    if not game_round or not game_round.questions:
+        raise HTTPException(status_code=400, detail="Round not set up")
+    
+    # Load the questions for this round
+    q_ids = game_round.questions
+    q_result = await db.execute(select(Question).where(Question.id.in_(q_ids)))
+    questions_map = {q.id: q for q in q_result.scalars().all()}
+    
+    # Simulate bot answers based on user's skill rank
+    # Higher user rank = smarter bot (50-85% accuracy)
+    user_rank = current_user.skill_rank or 1000
+    bot_accuracy = min(0.85, max(0.50, user_rank / 2000))
+    
+    bot_answers = []
+    bot_score = 0
+    
+    for q_id in q_ids:
+        question = questions_map.get(q_id)
+        if not question:
+            continue
+        
+        # Bot decides if it gets it right
+        is_correct = random.random() < bot_accuracy
+        
+        if is_correct:
+            selected = question.correct_option
+            time_taken = random.uniform(3.0, 12.0)  # Bot takes 3-12 seconds
+            base_score = 100
+            time_bonus = max(0, int(50 * (1 - min(time_taken / 15, 1))))
+            score = base_score + time_bonus
+        else:
+            # Pick a wrong answer
+            options = ['A', 'B', 'C', 'D']
+            options.remove(question.correct_option)
+            selected = random.choice(options)
+            time_taken = random.uniform(5.0, 14.0)
+            score = 0
+        
+        bot_answers.append({
+            "question_id": q_id,
+            "selected_option": selected,
+            "correct_option": question.correct_option,
+            "is_correct": is_correct,
+            "time_taken": round(time_taken, 1),
+            "score": score,
+            "question_text": question.question_text,
+            "option_a": question.option_a,
+            "option_b": question.option_b,
+            "option_c": question.option_c,
+            "option_d": question.option_d,
+        })
+        bot_score += score
+    
+    # Save bot answers
+    game_round.player2_answers = [{
+        "question_id": a["question_id"],
+        "selected_option": a["selected_option"],
+        "is_correct": a["is_correct"],
+        "time_taken": a["time_taken"],
+        "score": a["score"]
+    } for a in bot_answers]
+    game_round.player2_score = bot_score
+    
+    # Advance game
+    if game.current_round >= 6:
+        total_p1 = sum(r.player1_score for r in game.rounds)
+        total_p2 = sum(r.player2_score for r in game.rounds)
+        game.winner_id = game.player1_id if total_p1 >= total_p2 else game.player2_id
+        game.status = 'finished'
+    else:
+        game.current_round += 1
+        game.turn_player_id = game.player1_id
+        game.turn_started_at = datetime.now(timezone.utc)
+    
+    await db.commit()
+    
+    return {
+        "bot_answers": bot_answers,
+        "bot_score": bot_score,
+        "round_complete": True,
+        "game_status": game.status
     }
 
 @api_router.post("/games/{game_id}/select-category")
