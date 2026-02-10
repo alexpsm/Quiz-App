@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Copy, Check, Share2, MessageCircle, Zap, Shield, Plus, X } from 'lucide-react';
+import { Users, Copy, Check, Share2, MessageCircle, Zap, Shield, Plus, X, Brain, Target, Loader2 } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { PoweredByScore90 } from '../components/Score90Logo';
 import { games, leagues } from '../lib/api';
+import api from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Matchmaking() {
   const navigate = useNavigate();
