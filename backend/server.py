@@ -1285,12 +1285,12 @@ async def select_category(game_id: str, category: str, current_user: User = Depe
     if len(questions) < 3:
         raise HTTPException(status_code=400, detail="Not enough questions in this category")
     
-    # Create or update round
+    # Create or update round - check for existing first to prevent duplicates
     round_result = await db.execute(
         select(GameRound).where(
             GameRound.game_id == game_id,
             GameRound.round_number == game.current_round
-        )
+        ).order_by(GameRound.id).limit(1)
     )
     game_round = round_result.scalar_one_or_none()
     
