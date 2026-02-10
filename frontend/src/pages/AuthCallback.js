@@ -52,7 +52,7 @@ export default function AuthCallback() {
           <div className="absolute inset-0 border-4 border-neon-pink border-t-transparent rounded-full animate-spin"></div>
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">Processing authentication...</h2>
-        <PoweredByScore90 size="sm" className="justify-center" />
+        <PoweredByScore90 size="sm" variant="styled" className="justify-center" />
       </div>
     </div>
   );

@@ -273,7 +273,7 @@ export default function Store() {
           <h1 className="text-3xl font-extrabold tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-neon-pink to-neon-yellow mb-2">
             Store
           </h1>
-          <PoweredByScore90 size="sm" className="justify-center" />
+          <PoweredByScore90 size="sm" variant="neon" className="justify-center" />
           <p className="text-sm text-gray-400 mt-2">Get credits and go premium</p>
         </div>
 

@@ -93,7 +93,7 @@ export default function Profile() {
       <div className="p-5 space-y-6">
         {/* Header */}
         <div className="text-center">
-          <PoweredByScore90 size="md" className="justify-center mb-4" />
+          <PoweredByScore90 size="md" variant="neon" className="justify-center mb-4" />
         </div>
 
         {/* Profile Card */}
