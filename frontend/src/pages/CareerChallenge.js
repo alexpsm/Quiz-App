@@ -121,15 +121,9 @@ export default function CareerChallenge() {
           </button>
           <div className="flex items-center gap-2">
             <User className="text-neon-yellow" size={20} />
-            <h1 className="text-lg font-extrabold tracking-tighter uppercase text-white">Career Mode</h1>
+            <h1 className="text-lg font-extrabold tracking-tighter uppercase text-white">Career Mode Challenge</h1>
           </div>
-          <span className={`text-[10px] uppercase px-2 py-1 rounded font-bold ${
-            challenge.difficulty === 'easy' ? 'bg-green-500/30 text-green-400' :
-            challenge.difficulty === 'hard' ? 'bg-red-500/30 text-red-400' :
-            'bg-neon-yellow/30 text-neon-yellow'
-          }`}>
-            {challenge.difficulty}
-          </span>
+          <div className="w-16" /> {/* Spacer for centering */}
         </div>
 
         {/* Progress */}
