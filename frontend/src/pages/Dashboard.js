@@ -198,83 +198,83 @@ export default function Dashboard() {
           </motion.div>
         )}
 
-        {/* Weekly Club Wars */}
-        {user?.favorite_club && clubWar && (
+        {/* Career Mode Challenge */}
+        {careerChallenge && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card border-2 border-electric-purple/50 rounded-lg overflow-hidden shadow-electric-purple"
-            data-testid="club-wars-section"
+            className="bg-card border-2 border-neon-yellow/50 rounded-lg overflow-hidden shadow-neon-yellow"
+            data-testid="career-challenge-section"
           >
-            <div className="bg-gradient-to-r from-electric-purple/30 to-neon-pink/30 p-4 border-b border-electric-purple/30">
+            <div className="bg-gradient-to-r from-neon-yellow/20 to-orange-500/20 p-4 border-b border-neon-yellow/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Swords className="text-electric-purple" size={22} />
-                  <h3 className="text-lg font-extrabold tracking-tighter uppercase text-white">Weekly Club Wars</h3>
+                  <User className="text-neon-yellow" size={22} />
+                  <h3 className="text-lg font-extrabold tracking-tighter uppercase text-white">Career Mode</h3>
                 </div>
-                <span className="text-[10px] text-gray-400 uppercase bg-black/30 px-2 py-1 rounded">
-                  Ends {new Date(clubWar.week_end).toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})}
+                <span className={`text-[10px] uppercase px-2 py-1 rounded font-bold ${
+                  careerChallenge.difficulty === 'easy' ? 'bg-green-500/30 text-green-400' :
+                  careerChallenge.difficulty === 'hard' ? 'bg-red-500/30 text-red-400' :
+                  'bg-neon-yellow/30 text-neon-yellow'
+                }`}>
+                  {careerChallenge.difficulty}
                 </span>
               </div>
             </div>
 
-            <div className="p-4 space-y-3">
-              {/* Top 5 Clubs */}
-              {clubWar.standings && clubWar.standings.length > 0 ? (
-                <div className="space-y-2">
-                  {clubWar.standings.slice(0, 5).map((club) => {
-                    const isMyClub = club.club_name === user.favorite_club;
-                    return (
-                      <div
-                        key={club.club_name}
-                        data-testid={`war-club-${club.rank}`}
-                        className={`flex items-center gap-3 p-2 rounded-lg ${
-                          isMyClub ? 'bg-electric-purple/20 border border-electric-purple/30' : ''
-                        }`}
-                      >
-                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                          club.rank === 1 ? 'bg-neon-yellow text-black' :
-                          club.rank === 2 ? 'bg-gray-400 text-black' :
-                          club.rank === 3 ? 'bg-orange-600 text-white' :
-                          'bg-gray-700 text-gray-400'
-                        }`}>
-                          {club.rank}
-                        </span>
-                        <span className={`font-bold text-sm flex-1 truncate ${isMyClub ? 'text-electric-purple' : 'text-white'}`}>
-                          {club.club_name}
-                        </span>
-                        <span className="text-xs text-gray-500">{club.member_count} fans</span>
-                        <span className="text-lg font-black tracking-tighter text-neon-yellow">{club.total_points}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-gray-400 text-sm">No contributions yet this week</p>
-                  <p className="text-xs text-gray-500">Be the first to fight for your club!</p>
-                </div>
-              )}
-
-              {/* My Contribution */}
-              {clubWar.my_contribution && (
-                <div className="bg-black/30 rounded-lg p-3 flex items-center justify-between border border-white/10">
-                  <span className="text-xs text-gray-400 uppercase">Your contribution</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-500">{clubWar.my_contribution.games_played} games</span>
-                    <span className="text-lg font-black tracking-tighter text-electric-purple">{clubWar.my_contribution.points} pts</span>
+            <div className="p-4 space-y-4">
+              <div className="text-center">
+                <p className="text-sm text-gray-400 mb-2">Guess the footballer from their career path</p>
+                <div className="flex items-center justify-center gap-4 text-sm">
+                  <div className="text-center">
+                    <p className="text-2xl font-black text-neon-yellow">{careerChallenge.clubs_revealed}</p>
+                    <p className="text-[10px] text-gray-500 uppercase">Clubs shown</p>
+                  </div>
+                  <div className="w-px h-10 bg-white/10" />
+                  <div className="text-center">
+                    <p className="text-2xl font-black text-white">{careerChallenge.max_guesses - careerChallenge.guesses_made}</p>
+                    <p className="text-[10px] text-gray-500 uppercase">Guesses left</p>
                   </div>
                 </div>
+              </div>
+
+              {/* Show revealed clubs */}
+              {careerChallenge.revealed_clubs && careerChallenge.revealed_clubs.length > 0 && (
+                <div className="space-y-1.5">
+                  {careerChallenge.revealed_clubs.slice(0, 3).map((club, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-black/30 rounded px-3 py-2">
+                      <span className="w-5 h-5 rounded-full bg-neon-yellow/20 flex items-center justify-center text-[10px] font-bold text-neon-yellow">
+                        {idx + 1}
+                      </span>
+                      <span className="text-sm text-white font-medium flex-1">{club.club}</span>
+                      <span className="text-[10px] text-gray-500">{club.years}</span>
+                    </div>
+                  ))}
+                  {careerChallenge.clubs_revealed > 3 && (
+                    <p className="text-[10px] text-gray-500 text-center">+{careerChallenge.clubs_revealed - 3} more clubs revealed</p>
+                  )}
+                </div>
               )}
 
-              {/* Play for Club */}
-              <button
-                onClick={handleClubWarContribute}
-                data-testid="club-war-play-btn"
-                className="w-full bg-gradient-to-r from-electric-purple to-neon-pink hover:from-neon-pink hover:to-electric-purple h-11 px-6 rounded-sm font-bold uppercase tracking-wider text-white transition-all active:scale-95 shadow-electric-purple"
-              >
-                Fight for {user.favorite_club}!
-              </button>
+              {careerChallenge.solved ? (
+                <div className="text-center bg-neon-yellow/10 border border-neon-yellow/30 rounded-lg p-4">
+                  <Trophy className="text-neon-yellow mx-auto mb-2" size={28} />
+                  <p className="text-neon-yellow font-bold">Solved!</p>
+                  <p className="text-white text-lg font-black mt-1">{careerChallenge.answer}</p>
+                  <p className="text-xs text-gray-400 mt-2">Come back tomorrow for a new challenge!</p>
+                </div>
+              ) : (
+                <button
+                  onClick={() => navigate('/career-challenge')}
+                  data-testid="career-challenge-play-btn"
+                  className="w-full bg-gradient-to-r from-neon-yellow to-orange-500 hover:from-orange-500 hover:to-neon-yellow h-11 px-6 rounded-sm font-bold uppercase tracking-wider text-black transition-all active:scale-95 shadow-neon-yellow"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <HelpCircle size={18} />
+                    {careerChallenge.guesses_made > 0 ? 'Continue Guessing' : 'Start Guessing'}
+                  </span>
+                </button>
+              )}
             </div>
           </motion.div>
         )}
