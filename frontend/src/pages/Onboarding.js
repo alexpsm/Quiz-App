@@ -1,16 +1,49 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Globe, Phone, Calendar, Camera } from 'lucide-react';
+import { Phone, Camera } from 'lucide-react';
 import { users, clubs } from '../lib/api';
 import { PoweredByScore90 } from '../components/Score90Logo';
 import { useAuth } from '../context/AuthContext';
 
-const AVATAR_SEEDS = ['Felix', 'Aneka', 'Garfield', 'Boots', 'Tigger', 'Milo', 'Simba', 'Luna'];
+const FOOTBALL_AVATARS = [
+  { seed: 'Goalkeeper', label: 'Keeper' },
+  { seed: 'Striker', label: 'Striker' },
+  { seed: 'Midfielder', label: 'Mid' },
+  { seed: 'Defender', label: 'Defender' },
+  { seed: 'Captain', label: 'Captain' },
+  { seed: 'Winger', label: 'Winger' },
+  { seed: 'Playmaker', label: 'Maker' },
+  { seed: 'FreeKick', label: 'FK' },
+];
+
+const COUNTRIES = [
+  "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria",
+  "Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan",
+  "Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia",
+  "Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo","Costa Rica",
+  "Croatia","Cuba","Cyprus","Czech Republic","Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt",
+  "El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland","France","Gabon",
+  "Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana",
+  "Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel",
+  "Italy","Ivory Coast","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan",
+  "Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Madagascar",
+  "Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia",
+  "Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nauru","Nepal",
+  "Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman","Pakistan",
+  "Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar",
+  "Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Saudi Arabia",
+  "Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa",
+  "South Korea","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Taiwan",
+  "Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan",
+  "Tuvalu","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City",
+  "Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
+];
+
+const AGES = Array.from({ length: 88 }, (_, i) => i + 12);
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { checkAuth } = useAuth();
   const fileInputRef = useRef(null);
   const [username, setUsername] = useState('');
@@ -47,23 +80,27 @@ export default function Onboarding() {
       }
       setCustomAvatarFile(file);
       setCustomAvatarPreview(URL.createObjectURL(file));
-      setSelectedAvatar(-1); // deselect presets
+      setSelectedAvatar(-1);
     }
   };
 
+  const getAvatarUrl = (seed) => `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${seed}&backgroundColor=1a1a2e`;
+
+  const isFormValid = username && username.length >= 3 && favoriteClub && country && age && phoneNumber;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isFormValid) return;
     setError('');
     setLoading(true);
 
     try {
-      // Upload custom avatar if selected
       let avatarUrl;
       if (customAvatarFile) {
         const uploadRes = await users.uploadAvatar(customAvatarFile);
         avatarUrl = uploadRes.data.avatar;
       } else {
-        avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${AVATAR_SEEDS[selectedAvatar]}`;
+        avatarUrl = getAvatarUrl(FOOTBALL_AVATARS[selectedAvatar].seed);
       }
 
       await users.updateProfile({
@@ -82,6 +119,8 @@ export default function Onboarding() {
       setLoading(false);
     }
   };
+
+  const selectClass = "w-full bg-black/50 border-2 border-neon-blue/30 focus:border-neon-pink focus:ring-2 focus:ring-neon-pink/50 h-12 rounded-sm text-white px-4 outline-none transition-all appearance-none";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-[#1a1a2e] to-background flex items-center justify-center p-5">
@@ -105,15 +144,15 @@ export default function Onboarding() {
             {/* Avatar Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-3 uppercase tracking-wide">
-                Select Avatar
+                Choose Your Player
               </label>
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-5 gap-2">
                 {/* Upload button */}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   data-testid="avatar-upload-btn"
-                  className={`aspect-square rounded-lg border-2 border-dashed transition-all flex flex-col items-center justify-center gap-1 ${
+                  className={`aspect-square rounded-lg border-2 border-dashed transition-all flex flex-col items-center justify-center gap-0.5 ${
                     customAvatarPreview
                       ? 'border-neon-pink shadow-neon-pink'
                       : 'border-white/30 hover:border-neon-blue/60'
@@ -123,8 +162,8 @@ export default function Onboarding() {
                     <img src={customAvatarPreview} alt="Custom" className="w-full h-full rounded-lg object-cover" />
                   ) : (
                     <>
-                      <Camera size={16} className="text-gray-400" />
-                      <span className="text-[10px] text-gray-500">Upload</span>
+                      <Camera size={14} className="text-gray-400" />
+                      <span className="text-[9px] text-gray-500">Upload</span>
                     </>
                   )}
                 </button>
@@ -137,59 +176,61 @@ export default function Onboarding() {
                   data-testid="avatar-file-input"
                 />
 
-                {/* Preset avatars - show first 4 */}
-                {AVATAR_SEEDS.slice(0, 4).map((seed, index) => (
+                {/* Football avatars row 1 */}
+                {FOOTBALL_AVATARS.slice(0, 4).map((avatar, index) => (
                   <button
-                    key={seed}
+                    key={avatar.seed}
                     type="button"
                     onClick={() => { setSelectedAvatar(index); setCustomAvatarFile(null); setCustomAvatarPreview(null); }}
                     data-testid={`avatar-${index}`}
-                    className={`aspect-square rounded-lg border-2 transition-all ${
+                    className={`aspect-square rounded-lg border-2 transition-all relative overflow-hidden ${
                       selectedAvatar === index && !customAvatarPreview
                         ? 'border-neon-pink shadow-neon-pink'
                         : 'border-white/20 hover:border-neon-blue/40'
                     }`}
                   >
                     <img
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`}
-                      alt={`Avatar ${index + 1}`}
+                      src={getAvatarUrl(avatar.seed)}
+                      alt={avatar.label}
                       className="w-full h-full rounded-lg"
                     />
+                    <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[8px] text-center text-gray-300 py-0.5 font-bold uppercase">{avatar.label}</span>
                   </button>
                 ))}
               </div>
-              {/* Row 2 of avatars */}
-              <div className="grid grid-cols-5 gap-3 mt-3">
-                {AVATAR_SEEDS.slice(4).map((seed, index) => (
+              {/* Row 2 */}
+              <div className="grid grid-cols-5 gap-2 mt-2">
+                <div></div>
+                {FOOTBALL_AVATARS.slice(4).map((avatar, index) => (
                   <button
-                    key={seed}
+                    key={avatar.seed}
                     type="button"
                     onClick={() => { setSelectedAvatar(index + 4); setCustomAvatarFile(null); setCustomAvatarPreview(null); }}
                     data-testid={`avatar-${index + 4}`}
-                    className={`aspect-square rounded-lg border-2 transition-all ${
+                    className={`aspect-square rounded-lg border-2 transition-all relative overflow-hidden ${
                       selectedAvatar === index + 4 && !customAvatarPreview
                         ? 'border-neon-pink shadow-neon-pink'
                         : 'border-white/20 hover:border-neon-blue/40'
                     }`}
                   >
                     <img
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`}
-                      alt={`Avatar ${index + 5}`}
+                      src={getAvatarUrl(avatar.seed)}
+                      alt={avatar.label}
                       className="w-full h-full rounded-lg"
                     />
+                    <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[8px] text-center text-gray-300 py-0.5 font-bold uppercase">{avatar.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Username Input */}
+            {/* Username */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
                 Username
               </label>
               <input
                 type="text"
-                name="username"
                 data-testid="username-input"
                 value={username}
                 onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
@@ -199,33 +240,30 @@ export default function Onboarding() {
                 minLength={3}
                 maxLength={20}
               />
-              <p className="text-xs text-gray-500 mt-1">3-20 characters, lowercase letters, numbers, and underscores only</p>
+              <p className="text-xs text-gray-500 mt-1">3-20 characters, lowercase letters, numbers, underscores</p>
             </div>
 
-            {/* Favorite Club Selection */}
+            {/* Favorite Club */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
-                Choose Your Club
+                Select Your Favourite Club
               </label>
               <select
                 data-testid="club-select"
                 value={favoriteClub}
                 onChange={(e) => setFavoriteClub(e.target.value)}
-                className="w-full bg-black/50 border-2 border-neon-blue/30 focus:border-neon-pink focus:ring-2 focus:ring-neon-pink/50 h-12 rounded-sm text-white px-4 outline-none transition-all"
+                className={selectClass}
                 required
               >
-                <option value="" className="bg-card">Select your favorite club...</option>
+                <option value="" className="bg-card">Select a club...</option>
                 {Object.entries(clubsByLeague).map(([league, clubList]) => (
                   <optgroup key={league} label={league} className="bg-card">
                     {clubList.map((club) => (
-                      <option key={club} value={club} className="bg-card">
-                        {club}
-                      </option>
+                      <option key={club} value={club} className="bg-card">{club}</option>
                     ))}
                   </optgroup>
                 ))}
               </select>
-              <p className="text-xs text-gray-500 mt-1">Unlock Club Challenge mode and club-specific leaderboards</p>
             </div>
 
             {/* Country */}
@@ -233,44 +271,42 @@ export default function Onboarding() {
               <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
                 Country of Residence
               </label>
-              <div className="relative">
-                <Globe className="absolute left-3 top-3.5 text-gray-500" size={18} />
-                <input
-                  type="text"
-                  data-testid="country-input"
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="w-full bg-black/50 border-2 border-neon-blue/30 focus:border-neon-pink focus:ring-2 focus:ring-neon-pink/50 h-12 rounded-sm text-white placeholder:text-white/30 pl-10 pr-4 outline-none transition-all"
-                  placeholder="e.g. United Kingdom"
-                  required
-                />
-              </div>
+              <select
+                data-testid="country-select"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className={selectClass}
+                required
+              >
+                <option value="" className="bg-card">Select your country...</option>
+                {COUNTRIES.map((c) => (
+                  <option key={c} value={c} className="bg-card">{c}</option>
+                ))}
+              </select>
             </div>
 
-            {/* Age & Phone in a row */}
+            {/* Age & Phone */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
                   Age
                 </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3.5 text-gray-500" size={18} />
-                  <input
-                    type="number"
-                    data-testid="age-input"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                    className="w-full bg-black/50 border-2 border-neon-blue/30 focus:border-neon-pink focus:ring-2 focus:ring-neon-pink/50 h-12 rounded-sm text-white placeholder:text-white/30 pl-10 pr-4 outline-none transition-all"
-                    placeholder="25"
-                    min={13}
-                    max={120}
-                    required
-                  />
-                </div>
+                <select
+                  data-testid="age-select"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  className={selectClass}
+                  required
+                >
+                  <option value="" className="bg-card">Age</option>
+                  {AGES.map((a) => (
+                    <option key={a} value={a} className="bg-card">{a}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
-                  Phone
+                  Mobile Phone
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-3.5 text-gray-500" size={18} />
@@ -288,7 +324,7 @@ export default function Onboarding() {
             </div>
 
             {error && (
-              <div className="bg-destructive/10 border-2 border-destructive rounded-sm p-3 text-sm text-destructive">
+              <div className="bg-destructive/10 border-2 border-destructive rounded-sm p-3 text-sm text-destructive" data-testid="onboarding-error">
                 {error}
               </div>
             )}
@@ -296,8 +332,12 @@ export default function Onboarding() {
             <button
               type="submit"
               data-testid="continue-btn"
-              disabled={loading || !username || username.length < 3 || !favoriteClub || !country || !age || !phoneNumber}
-              className="w-full bg-gradient-to-r from-neon-blue via-neon-pink to-neon-yellow hover:from-neon-yellow hover:via-neon-pink hover:to-neon-blue h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-neon-blue hover:shadow-neon-pink transition-all active:scale-95 disabled:opacity-50 text-white"
+              disabled={loading || !isFormValid}
+              className={`w-full h-12 px-6 rounded-sm font-bold uppercase tracking-wider transition-all active:scale-95 text-white ${
+                isFormValid && !loading
+                  ? 'bg-gradient-to-r from-neon-blue via-neon-pink to-neon-yellow hover:from-neon-yellow hover:via-neon-pink hover:to-neon-blue shadow-neon-blue hover:shadow-neon-pink cursor-pointer'
+                  : 'bg-gray-700 cursor-not-allowed opacity-50'
+              }`}
             >
               {loading ? 'Saving...' : 'Continue to QuizBall'}
             </button>

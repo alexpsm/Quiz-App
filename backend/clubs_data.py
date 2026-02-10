@@ -2,50 +2,38 @@
 
 CLUBS_BY_LEAGUE = {
     "Premier League": [
-        "Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton", 
-        "Burnley", "Chelsea", "Crystal Palace", "Everton", "Fulham",
-        "Leeds United", "Liverpool", "Manchester City", "Manchester United",
-        "Newcastle United", "Nottingham Forest", "Sunderland", "Tottenham",
-        "West Ham", "Wolverhampton"
-    ],
-    "La Liga": [
-        "Real Madrid", "Barcelona", "Atletico Madrid", "Sevilla", "Real Sociedad",
-        "Real Betis", "Villarreal", "Athletic Bilbao", "Valencia", "Osasuna",
-        "Celta Vigo", "Girona", "Mallorca", "Getafe", "Cadiz",
-        "Rayo Vallecano", "Alaves", "Granada", "Almeria", "Las Palmas"
+        "Arsenal", "Aston Villa", "AFC Bournemouth", "Brentford", "Brighton & Hove Albion",
+        "Chelsea", "Crystal Palace", "Everton", "Fulham", "Ipswich Town",
+        "Leicester City", "Liverpool", "Manchester City", "Manchester United",
+        "Newcastle United", "Nottingham Forest", "Southampton", "Tottenham Hotspur",
+        "West Ham United", "Wolverhampton Wanderers"
     ],
     "Bundesliga": [
-        "Bayern Munich", "Borussia Dortmund", "RB Leipzig", "Union Berlin",
-        "Freiburg", "Bayer Leverkusen", "Eintracht Frankfurt", "Wolfsburg",
-        "Mainz", "Borussia Monchengladbach", "Cologne", "Hoffenheim",
-        "Werder Bremen", "Bochum", "Augsburg", "Stuttgart", "Hertha Berlin", "Schalke"
-    ],
-    "Serie A": [
-        "Inter Milan", "AC Milan", "Juventus", "Napoli", "AS Roma",
-        "Lazio", "Atalanta", "Fiorentina", "Bologna", "Torino",
-        "Udinese", "Sassuolo", "Empoli", "Monza", "Lecce",
-        "Verona", "Salernitana", "Spezia", "Cremonese", "Sampdoria"
+        "Bayern Munich", "Borussia Dortmund", "Bayer Leverkusen", "RB Leipzig",
+        "VfB Stuttgart", "Eintracht Frankfurt", "SC Freiburg", "VfL Wolfsburg",
+        "TSG Hoffenheim", "1. FC Union Berlin", "Borussia Monchengladbach",
+        "1. FSV Mainz 05", "SV Werder Bremen", "FC Augsburg", "VfL Bochum",
+        "1. FC Heidenheim", "FC St. Pauli", "Holstein Kiel"
     ],
     "Ligue 1": [
-        "PSG", "Lens", "Lyon", "Marseille", "Lille",
-        "Rennes", "Strasbourg", "Toulouse", "Angers", "Monaco",
-        "Brest", "Le Havre", "Nice", "Paris FC", "Auxerre",
-        "Nantes", "Metz", "Montpellier"
+        "Paris Saint-Germain", "AS Monaco", "Olympique de Marseille", "LOSC Lille",
+        "Olympique Lyonnais", "RC Lens", "Stade Rennais", "OGC Nice",
+        "Stade Brestois", "RC Strasbourg", "FC Nantes", "Toulouse FC",
+        "Montpellier HSC", "AJ Auxerre", "Angers SCO", "Le Havre AC",
+        "AS Saint-Etienne", "Stade de Reims"
     ],
-    "Championship": [
-        "Leicester City", "Ipswich Town", "Southampton", "Leeds United",
-        "West Brom", "Middlesbrough", "Norwich City", "Coventry City",
-        "Hull City", "Preston North End", "Sheffield Wednesday", "Cardiff City",
-        "Swansea City", "Bristol City", "Millwall", "Blackburn Rovers",
-        "Stoke City", "Queens Park Rangers", "Birmingham City", "Plymouth Argyle"
+    "Serie A": [
+        "Inter Milan", "AC Milan", "Juventus", "SSC Napoli", "AS Roma",
+        "SS Lazio", "Atalanta", "ACF Fiorentina", "Bologna FC", "Torino FC",
+        "Udinese", "Genoa CFC", "Cagliari", "Empoli FC", "US Lecce",
+        "Parma Calcio", "Hellas Verona", "Venezia FC", "AC Monza", "Como 1907"
     ],
-    "South American": [
-        "Boca Juniors", "River Plate", "Racing Club", "Independiente",
-        "San Lorenzo", "Flamengo", "Palmeiras", "Corinthians", "Sao Paulo",
-        "Santos", "Atletico Mineiro", "Penarol", "Nacional", "Colo-Colo",
-        "Universidad de Chile", "Cerro Porteno", "Olimpia", "Barcelona SC",
-        "LDU Quito", "Millonarios"
-    ]
+    "La Liga": [
+        "Real Madrid", "FC Barcelona", "Atletico Madrid", "Sevilla FC", "Real Sociedad",
+        "Real Betis", "Villarreal CF", "Athletic Bilbao", "Valencia CF", "CA Osasuna",
+        "RC Celta de Vigo", "Girona FC", "RCD Mallorca", "Getafe CF", "Deportivo Alaves",
+        "UD Las Palmas", "Rayo Vallecano", "RCD Espanyol", "Real Valladolid", "CD Leganes"
+    ],
 }
 
 def get_all_clubs():
