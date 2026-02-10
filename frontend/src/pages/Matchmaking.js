@@ -217,24 +217,96 @@ export default function Matchmaking() {
           <PoweredByScore90 size="sm" className="justify-center" />
         </div>
 
-        {/* Random Match */}
+        {/* Ranked Match - Skill-Based Matchmaking */}
+        <div className="bg-card border-2 border-electric-purple/50 rounded-lg p-5 shadow-electric-purple">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-electric-purple to-neon-pink border-2 border-electric-purple flex items-center justify-center flex-shrink-0">
+              <Target className="text-white" size={24} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold uppercase tracking-tight text-white mb-1">Ranked Match</h3>
+              <p className="text-sm text-gray-400">Skill-based matchmaking • Your rank: <span className="text-neon-yellow font-bold">{user?.skill_rank || 1000}</span></p>
+            </div>
+          </div>
+          
+          {!isSearching ? (
+            <button
+              onClick={startRankedSearch}
+              data-testid="ranked-match-btn"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-electric-purple to-neon-pink hover:from-neon-pink hover:to-electric-purple h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-electric-purple hover:shadow-neon-pink transition-all active:scale-95 disabled:opacity-50 text-white"
+            >
+              Find Ranked Match
+            </button>
+          ) : (
+            <div className="space-y-3">
+              {/* Searching Animation */}
+              <div className="bg-black/50 border-2 border-electric-purple/30 rounded-lg p-4">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <Loader2 className="text-electric-purple animate-spin" size={24} />
+                  <span className="text-white font-bold">Searching for opponent...</span>
+                </div>
+                
+                {matchmakingStatus && (
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-black/30 rounded p-2">
+                      <p className="text-xl font-black text-neon-yellow">{matchmakingStatus.wait_time || 0}s</p>
+                      <p className="text-[10px] text-gray-500 uppercase">Wait Time</p>
+                    </div>
+                    <div className="bg-black/30 rounded p-2">
+                      <p className="text-xl font-black text-electric-purple">±{matchmakingStatus.skill_range || 150}</p>
+                      <p className="text-[10px] text-gray-500 uppercase">Skill Range</p>
+                    </div>
+                    <div className="bg-black/30 rounded p-2">
+                      <p className="text-xl font-black text-neon-blue">{matchmakingStatus.players_in_queue || 1}</p>
+                      <p className="text-[10px] text-gray-500 uppercase">In Queue</p>
+                    </div>
+                  </div>
+                )}
+                
+                {matchmakingStatus?.offer_bot_match && (
+                  <div className="mt-3 p-3 bg-neon-yellow/10 border border-neon-yellow/30 rounded">
+                    <p className="text-sm text-gray-300 mb-2">No opponent found. Play against the bot?</p>
+                    <button
+                      onClick={acceptBotMatch}
+                      data-testid="accept-bot-btn"
+                      className="w-full bg-neon-yellow/20 border border-neon-yellow text-neon-yellow h-9 rounded-sm font-bold text-xs uppercase hover:bg-neon-yellow/30 transition-all"
+                    >
+                      Play vs TheScore90Bot
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <button
+                onClick={cancelRankedSearch}
+                data-testid="cancel-search-btn"
+                className="w-full border-2 border-destructive bg-transparent hover:bg-destructive/10 text-destructive h-10 rounded-sm font-bold uppercase tracking-wider text-sm transition-all"
+              >
+                Cancel Search
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Play - Bot Match */}
         <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-5 shadow-neon-blue">
           <div className="flex items-start gap-4 mb-4">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-neon-blue to-neon-pink border-2 border-neon-blue flex items-center justify-center flex-shrink-0">
-              <Users className="text-white" size={24} />
+              <Brain className="text-white" size={24} />
             </div>
             <div>
-              <h3 className="text-lg font-bold uppercase tracking-tight text-white mb-1">Random Opponent</h3>
-              <p className="text-sm text-gray-400">Match based on ball knowledge</p>
+              <h3 className="text-lg font-bold uppercase tracking-tight text-white mb-1">Quick Play</h3>
+              <p className="text-sm text-gray-400">Play instantly against TheScore90Bot</p>
             </div>
           </div>
           <button
             onClick={handleRandomMatch}
             data-testid="random-match-btn"
-            disabled={loading}
+            disabled={loading || isSearching}
             className="w-full bg-gradient-to-r from-neon-blue to-neon-pink hover:from-neon-pink hover:to-neon-yellow h-12 px-6 rounded-sm font-bold uppercase tracking-wider shadow-neon-blue hover:shadow-neon-pink transition-all active:scale-95 disabled:opacity-50 text-white"
           >
-            {loading ? 'Finding...' : 'Find Match'}
+            {loading ? 'Starting...' : 'Play vs Bot'}
           </button>
         </div>
 
