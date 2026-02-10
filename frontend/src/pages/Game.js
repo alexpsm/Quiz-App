@@ -1,13 +1,25 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Trophy, ArrowLeft, Brain } from 'lucide-react';
+import { Clock, Trophy, ArrowLeft, Brain, Eye } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { PoweredByScore90 } from '../components/Score90Logo';
 import { useAuth } from '../context/AuthContext';
 import { games, questions as questionsApi } from '../lib/api';
 
 const TIMER_DURATION = 15;
+const BOT_USERNAME = 'TheScore90Bot';
+
+function formatCountdown(ms) {
+  if (ms <= 0) return 'Time up!';
+  const totalSecs = Math.floor(ms / 1000);
+  const h = Math.floor(totalSecs / 3600);
+  const m = Math.floor((totalSecs % 3600) / 60);
+  const s = totalSecs % 60;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
 
 export default function Game() {
   const { gameId } = useParams();
@@ -22,40 +34,46 @@ export default function Game() {
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
   const [startTime, setStartTime] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  // Turn deadline countdown
+  const [turnTimeLeft, setTurnTimeLeft] = useState(null);
+  // Bot play state
+  const [botAnswers, setBotAnswers] = useState(null);
+  const [botAnswerIndex, setBotAnswerIndex] = useState(0);
+  const [botPhaseStep, setBotPhaseStep] = useState('idle'); // idle | thinking | answered
+  const [botCountdown, setBotCountdown] = useState(45);
+  // Playback state
+  const [playbackAnswers, setPlaybackAnswers] = useState(null);
+  const [playbackIndex, setPlaybackIndex] = useState(0);
+
   const timerRef = useRef(null);
+  const turnTimerRef = useRef(null);
 
-  useEffect(() => {
-    loadGame();
-    loadCategories();
-  }, [gameId]);
-
-  useEffect(() => {
-    if (gamePhase === 'question' && startTime) {
-      timerRef.current = setInterval(() => {
-        const elapsed = (Date.now() - startTime) / 1000;
-        const remaining = Math.max(0, TIMER_DURATION - elapsed);
-        setTimeLeft(remaining);
-
-        if (remaining === 0) {
-          handleTimeout();
-        }
-      }, 100);
-
-      return () => clearInterval(timerRef.current);
-    }
-  }, [gamePhase, startTime]);
-
-  const loadGame = async () => {
+  const loadGame = useCallback(async () => {
     try {
       const response = await games.get(gameId);
-      setGame(response.data);
+      const g = response.data;
+      setGame(g);
 
-      if (response.data.status === 'finished') {
+      if (g.status === 'finished') {
         setGamePhase('game_over');
-      } else if (!response.data.is_my_turn) {
-        setGamePhase('waiting');
+      } else if (!g.is_my_turn) {
+        // Check if bot game - trigger bot play
+        if (g.is_bot_game) {
+          setGamePhase('bot_countdown');
+          setBotCountdown(45);
+        } else {
+          setGamePhase('waiting');
+        }
       } else {
-        const currentRound = response.data.rounds?.find(r => r.round_number === response.data.current_round);
+        const currentRound = g.rounds?.find(r => r.round_number === g.current_round);
+        // Check if there are opponent answers to playback first
+        const prevRound = g.rounds?.find(r => r.round_number === g.current_round - 1);
+        if (prevRound && prevRound.opponent_answers && prevRound.opponent_answers.length > 0 && prevRound.questions?.length > 0) {
+          setPlaybackAnswers({ answers: prevRound.opponent_answers, questions: prevRound.questions, round: prevRound.round_number });
+          setPlaybackIndex(0);
+          setGamePhase('playback');
+          return;
+        }
         if (currentRound && currentRound.category_selected) {
           setGamePhase('waiting');
         } else {
@@ -66,14 +84,96 @@ export default function Game() {
       console.error('Failed to load game:', error);
       navigate('/dashboard');
     }
+  }, [gameId, navigate]);
+
+  useEffect(() => {
+    loadGame();
+    loadCategories();
+  }, [gameId, loadGame]);
+
+  // 3-hour turn deadline countdown
+  useEffect(() => {
+    if (gamePhase === 'waiting' && game?.turn_deadline) {
+      const update = () => {
+        const remaining = new Date(game.turn_deadline).getTime() - Date.now();
+        setTurnTimeLeft(Math.max(0, remaining));
+      };
+      update();
+      turnTimerRef.current = setInterval(update, 1000);
+      return () => clearInterval(turnTimerRef.current);
+    }
+    return () => clearInterval(turnTimerRef.current);
+  }, [gamePhase, game]);
+
+  // Per-question timer
+  useEffect(() => {
+    if (gamePhase === 'question' && startTime) {
+      timerRef.current = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const remaining = Math.max(0, TIMER_DURATION - elapsed);
+        setTimeLeft(remaining);
+        if (remaining === 0) handleTimeout();
+      }, 100);
+      return () => clearInterval(timerRef.current);
+    }
+  }, [gamePhase, startTime]);
+
+  // Bot countdown (45s) then trigger bot play
+  useEffect(() => {
+    if (gamePhase === 'bot_countdown') {
+      const interval = setInterval(() => {
+        setBotCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            triggerBotPlay();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [gamePhase]);
+
+  // Bot live answer animation
+  useEffect(() => {
+    if (gamePhase === 'bot_live' && botAnswers && botAnswerIndex < botAnswers.length) {
+      setBotPhaseStep('thinking');
+      const thinkTime = (botAnswers[botAnswerIndex].time_taken || 5) * 1000;
+      const thinkTimer = setTimeout(() => {
+        setBotPhaseStep('answered');
+        const showTimer = setTimeout(() => {
+          if (botAnswerIndex < botAnswers.length - 1) {
+            setBotAnswerIndex(prev => prev + 1);
+            setBotPhaseStep('thinking');
+          } else {
+            // Bot done, reload game
+            setTimeout(() => loadGame(), 1000);
+          }
+        }, 2000);
+        return () => clearTimeout(showTimer);
+      }, Math.min(thinkTime, 4000)); // Cap visual delay at 4s for UX
+      return () => clearTimeout(thinkTimer);
+    }
+  }, [gamePhase, botAnswers, botAnswerIndex, loadGame]);
+
+  const triggerBotPlay = async () => {
+    try {
+      const response = await games.botPlay(gameId);
+      setBotAnswers(response.data.bot_answers);
+      setBotAnswerIndex(0);
+      setGamePhase('bot_live');
+    } catch (error) {
+      console.error('Bot play failed:', error);
+      loadGame();
+    }
   };
 
   const loadCategories = async () => {
     try {
       const response = await questionsApi.categories();
-      const allCategories = response.data;
-      const randomCategories = allCategories.sort(() => 0.5 - Math.random()).slice(0, 3);
-      setCategories(randomCategories);
+      const all = response.data;
+      setCategories(all.sort(() => 0.5 - Math.random()).slice(0, 3));
     } catch (error) {
       console.error('Failed to load categories:', error);
     }
@@ -94,7 +194,6 @@ export default function Game() {
 
   const handleAnswerSelect = async (option) => {
     if (selectedAnswer) return;
-
     clearInterval(timerRef.current);
     setSelectedAnswer(option);
 
@@ -120,6 +219,7 @@ export default function Game() {
           setTimeLeft(TIMER_DURATION);
           setFeedback(null);
         } else {
+          // Turn done, reload to check state
           loadGame();
         }
       }, 2000);
@@ -133,14 +233,25 @@ export default function Game() {
     handleAnswerSelect('');
   };
 
+  const advancePlayback = () => {
+    if (playbackIndex < (playbackAnswers?.answers?.length || 0) - 1) {
+      setPlaybackIndex(prev => prev + 1);
+    } else {
+      // Done, go to category selection
+      setPlaybackAnswers(null);
+      setPlaybackIndex(0);
+      setGamePhase('category_selection');
+    }
+  };
+
   if (!game) {
     return (
       <Layout showNav={false}>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="relative w-16 h-16 mx-auto mb-4">
-              <div className="absolute inset-0 border-4 border-neon-blue/30 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-neon-pink border-t-transparent rounded-full animate-spin"></div>
+              <div className="absolute inset-0 border-4 border-neon-blue/30 rounded-full" />
+              <div className="absolute inset-0 border-4 border-neon-pink border-t-transparent rounded-full animate-spin" />
             </div>
             <p className="text-gray-400">Loading game...</p>
           </div>
@@ -149,24 +260,21 @@ export default function Game() {
     );
   }
 
+  const opponent = game.player2;
+
   return (
     <Layout showNav={false}>
       <div className="min-h-screen">
         {/* Header */}
         <div className="p-5 border-b border-white/10 bg-card/50 backdrop-blur-sm">
           <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => navigate('/dashboard')}
-              data-testid="back-btn"
-              className="text-gray-400 hover:text-neon-blue transition-colors"
-            >
+            <button onClick={() => navigate('/dashboard')} data-testid="back-btn" className="text-gray-400 hover:text-neon-blue transition-colors">
               <ArrowLeft size={24} />
             </button>
             <span className="text-sm text-gray-400 uppercase tracking-wider font-bold">Round {game.current_round}/6</span>
             <PoweredByScore90 size="xs" />
           </div>
 
-          {/* Players */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img src={user?.avatar} alt="You" className="w-12 h-12 rounded-full border-2 border-neon-yellow shadow-neon-yellow" />
@@ -175,52 +283,33 @@ export default function Game() {
                 <p className="text-3xl font-black tracking-tighter text-neon-yellow">{game.my_score}</p>
               </div>
             </div>
-
-            <div className="text-center">
-              <span className="text-gray-600 text-2xl font-black">VS</span>
-            </div>
-
+            <span className="text-gray-600 text-2xl font-black">VS</span>
             <div className="flex items-center gap-3 flex-row-reverse">
-              <img src={game.player2?.avatar} alt="Opponent" className="w-12 h-12 rounded-full border-2 border-gray-500" />
+              <img src={opponent?.avatar} alt="Opponent" className="w-12 h-12 rounded-full border-2 border-gray-500" />
               <div className="text-right">
-                <p className="font-bold text-white text-sm">{game.player2?.username || 'Waiting...'}</p>
+                <p className="font-bold text-white text-sm">{opponent?.username || 'Waiting...'}</p>
                 <p className="text-3xl font-black tracking-tighter text-gray-400">{game.opponent_score}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Game Content */}
         <div className="p-5">
           <AnimatePresence mode="wait">
+            {/* CATEGORY SELECTION */}
             {gamePhase === 'category_selection' && (
-              <motion.div
-                key="categories"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
-              >
+              <motion.div key="categories" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
                 <div className="text-center">
-                  <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-2">
-                    Select Category
-                  </h2>
+                  <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-2">Select Category</h2>
                   <p className="text-sm text-gray-400">Choose your trivia topic</p>
                 </div>
-
                 <div className="space-y-3">
                   {categories.map((category, index) => {
                     const colors = ['border-neon-blue/50 hover:border-neon-blue shadow-neon-blue/30', 'border-neon-pink/50 hover:border-neon-pink shadow-neon-pink/30', 'border-neon-yellow/50 hover:border-neon-yellow shadow-neon-yellow/30'];
                     return (
-                      <motion.button
-                        key={category}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        onClick={() => handleCategorySelect(category)}
-                        data-testid={`category-${category}`}
-                        className={`w-full bg-card border-2 ${colors[index]} rounded-lg p-6 text-left transition-all active:scale-[0.98] hover:shadow-lg`}
-                      >
+                      <motion.button key={category} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.1 }}
+                        onClick={() => handleCategorySelect(category)} data-testid={`category-${category}`}
+                        className={`w-full bg-card border-2 ${colors[index]} rounded-lg p-6 text-left transition-all active:scale-[0.98] hover:shadow-lg`}>
                         <p className="text-xl font-bold uppercase tracking-tight text-white">{category}</p>
                       </motion.button>
                     );
@@ -229,71 +318,45 @@ export default function Game() {
               </motion.div>
             )}
 
+            {/* QUESTION */}
             {gamePhase === 'question' && currentQuestions[currentQuestionIndex] && (
-              <motion.div
-                key="question"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05 }}
-                className="space-y-6"
-              >
-                {/* Timer */}
+              <motion.div key="question" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="space-y-6">
                 <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Clock className="text-neon-blue" size={20} />
                       <span className="text-sm text-gray-400 uppercase tracking-wider">Time</span>
                     </div>
-                    <span className={`text-2xl font-black tracking-tighter ${timeLeft <= 5 ? 'text-destructive' : 'text-neon-blue'}`}>
-                      {Math.ceil(timeLeft)}s
-                    </span>
+                    <span className={`text-2xl font-black tracking-tighter ${timeLeft <= 5 ? 'text-destructive' : 'text-neon-blue'}`}>{Math.ceil(timeLeft)}s</span>
                   </div>
                   <div className="w-full bg-black/50 rounded-full h-2 overflow-hidden">
-                    <motion.div
-                      className={`h-full ${timeLeft <= 5 ? 'bg-destructive' : 'bg-neon-blue'}`}
-                      initial={{ width: '100%' }}
-                      animate={{ width: `${(timeLeft / TIMER_DURATION) * 100}%` }}
-                      transition={{ duration: 0.1 }}
-                    />
+                    <motion.div className={`h-full ${timeLeft <= 5 ? 'bg-destructive' : 'bg-neon-blue'}`}
+                      initial={{ width: '100%' }} animate={{ width: `${(timeLeft / TIMER_DURATION) * 100}%` }} transition={{ duration: 0.1 }} />
                   </div>
                 </div>
 
-                {/* Question */}
                 <div className="bg-card border-2 border-neon-pink/30 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">
-                      Question {currentQuestionIndex + 1}/3
-                    </span>
+                    <span className="text-xs text-gray-500 uppercase tracking-wider">Question {currentQuestionIndex + 1}/3</span>
                     <Brain className="text-neon-yellow" size={20} />
                   </div>
-                  <p className="text-xl font-bold leading-relaxed text-white">
-                    {currentQuestions[currentQuestionIndex].question_text}
-                  </p>
+                  <p className="text-xl font-bold leading-relaxed text-white">{currentQuestions[currentQuestionIndex].question_text}</p>
                 </div>
 
-                {/* Options */}
                 <div className="grid grid-cols-1 gap-3">
                   {['option_a', 'option_b', 'option_c', 'option_d'].map((optionKey, index) => {
-                    const optionLabel = String.fromCharCode(65 + index);
-                    const optionValue = currentQuestions[currentQuestionIndex][optionKey];
-                    const optionColors = ['neon-blue', 'neon-pink', 'neon-yellow', 'electric-purple'];
-                    const color = optionColors[index];
+                    const label = String.fromCharCode(65 + index);
+                    const value = currentQuestions[currentQuestionIndex][optionKey];
+                    const clr = ['neon-blue', 'neon-pink', 'neon-yellow', 'electric-purple'][index];
                     return (
-                      <motion.button
-                        key={optionKey}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        onClick={() => handleAnswerSelect(optionLabel)}
-                        data-testid={`option-${optionLabel}`}
-                        disabled={!!selectedAnswer}
-                        className={`bg-black/40 border-2 border-${color}/30 hover:border-${color} rounded-lg p-4 text-left transition-all active:scale-[0.98] disabled:opacity-50`}
-                      >
+                      <motion.button key={optionKey} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.05 }}
+                        onClick={() => handleAnswerSelect(label)} data-testid={`option-${label}`} disabled={!!selectedAnswer}
+                        className={`bg-black/40 border-2 border-${clr}/30 hover:border-${clr} rounded-lg p-4 text-left transition-all active:scale-[0.98] disabled:opacity-50`}>
                         <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full bg-${color}/20 border-2 border-${color} flex items-center justify-center flex-shrink-0`}>
-                            <span className={`font-bold text-${color}`}>{optionLabel}</span>
+                          <div className={`w-8 h-8 rounded-full bg-${clr}/20 border-2 border-${clr} flex items-center justify-center flex-shrink-0`}>
+                            <span className={`font-bold text-${clr}`}>{label}</span>
                           </div>
-                          <p className="text-white font-medium">{optionValue}</p>
+                          <p className="text-white font-medium">{value}</p>
                         </div>
                       </motion.button>
                     );
@@ -302,88 +365,167 @@ export default function Game() {
               </motion.div>
             )}
 
+            {/* FEEDBACK */}
             {gamePhase === 'feedback' && feedback && (
-              <motion.div
-                key="feedback"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center space-y-6 py-8"
-              >
-                <div className={`w-32 h-32 rounded-full mx-auto flex items-center justify-center ${
-                  feedback.is_correct ? 'bg-neon-yellow/20 border-4 border-neon-yellow shadow-neon-yellow' : 'bg-destructive/20 border-4 border-destructive'
-                }`}>
-                  <span className="text-6xl font-black">
-                    {feedback.is_correct ? '✓' : '✗'}
-                  </span>
+              <motion.div key="feedback" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-6 py-8">
+                <div className={`w-32 h-32 rounded-full mx-auto flex items-center justify-center ${feedback.is_correct ? 'bg-neon-yellow/20 border-4 border-neon-yellow shadow-neon-yellow' : 'bg-destructive/20 border-4 border-destructive'}`}>
+                  <span className="text-6xl font-black">{feedback.is_correct ? '\u2713' : '\u2717'}</span>
                 </div>
-
                 <div>
-                  <h2 className={`text-3xl font-extrabold tracking-tighter uppercase ${
-                    feedback.is_correct ? 'text-neon-yellow' : 'text-destructive'
-                  }`}>
-                    {feedback.is_correct ? 'Correct!' : 'Wrong'}
-                  </h2>
-                  <p className="text-2xl font-black tracking-tighter text-neon-blue mt-2">
-                    +{feedback.score} points
-                  </p>
+                  <h2 className={`text-3xl font-extrabold tracking-tighter uppercase ${feedback.is_correct ? 'text-neon-yellow' : 'text-destructive'}`}>{feedback.is_correct ? 'Correct!' : 'Wrong'}</h2>
+                  <p className="text-2xl font-black tracking-tighter text-neon-blue mt-2">+{feedback.score} points</p>
                 </div>
               </motion.div>
             )}
 
+            {/* WAITING (Real Player) - 3hr countdown */}
             {gamePhase === 'waiting' && (
-              <motion.div
-                key="waiting"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-12"
-              >
+              <motion.div key="waiting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
                 <div className="relative w-20 h-20 mx-auto mb-6">
-                  <div className="absolute inset-0 border-4 border-neon-blue/30 rounded-full"></div>
-                  <div className="absolute inset-0 border-4 border-neon-pink border-t-transparent rounded-full animate-spin"></div>
+                  <div className="absolute inset-0 border-4 border-neon-blue/30 rounded-full" />
+                  <div className="absolute inset-0 border-4 border-neon-pink border-t-transparent rounded-full animate-spin" />
                 </div>
-                <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-2">
-                  Opponent's Turn
-                </h2>
-                <p className="text-gray-400">Waiting for {game.player2?.username || 'opponent'} to play...</p>
+                <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-2">Opponent's Turn</h2>
+                <p className="text-gray-400 mb-6">Waiting for {opponent?.username || 'opponent'} to play...</p>
+                {turnTimeLeft !== null && (
+                  <div className="bg-card border-2 border-neon-yellow/30 rounded-lg p-4 inline-block shadow-neon-yellow" data-testid="turn-countdown">
+                    <Clock className="text-neon-yellow mx-auto mb-2" size={24} />
+                    <p className="text-2xl font-black tracking-tighter text-neon-yellow">{formatCountdown(turnTimeLeft)}</p>
+                    <p className="text-xs text-gray-500 uppercase mt-1">Time remaining</p>
+                  </div>
+                )}
               </motion.div>
             )}
 
+            {/* BOT COUNTDOWN (45s) */}
+            {gamePhase === 'bot_countdown' && (
+              <motion.div key="bot_countdown" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
+                <img src={opponent?.avatar} alt={BOT_USERNAME} className="w-20 h-20 rounded-full border-4 border-neon-blue mx-auto mb-4 shadow-neon-blue" />
+                <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-2">{BOT_USERNAME}</h2>
+                <p className="text-gray-400 mb-6">is preparing to answer...</p>
+                <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-6 max-w-xs mx-auto shadow-neon-blue" data-testid="bot-countdown">
+                  <p className="text-5xl font-black tracking-tighter text-neon-blue mb-2">{botCountdown}s</p>
+                  <div className="w-full bg-black/50 rounded-full h-2 overflow-hidden">
+                    <motion.div className="h-full bg-neon-blue" initial={{ width: '100%' }} animate={{ width: `${(botCountdown / 45) * 100}%` }} transition={{ duration: 0.5 }} />
+                  </div>
+                  <p className="text-xs text-gray-500 uppercase mt-3">Bot is thinking</p>
+                </div>
+                <button onClick={() => { setBotCountdown(0); triggerBotPlay(); }} data-testid="skip-bot-wait"
+                  className="mt-4 text-sm text-neon-pink hover:text-neon-yellow transition-colors underline">
+                  Skip wait
+                </button>
+              </motion.div>
+            )}
+
+            {/* BOT LIVE ANSWERING */}
+            {gamePhase === 'bot_live' && botAnswers && botAnswers[botAnswerIndex] && (
+              <motion.div key="bot_live" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <img src={opponent?.avatar} alt={BOT_USERNAME} className="w-10 h-10 rounded-full border-2 border-neon-blue" />
+                  <div>
+                    <p className="text-sm font-bold text-neon-blue uppercase">{BOT_USERNAME} is answering</p>
+                    <p className="text-xs text-gray-500">Question {botAnswerIndex + 1}/3</p>
+                  </div>
+                  <Eye className="text-neon-pink ml-auto" size={20} />
+                </div>
+
+                <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-6">
+                  <p className="text-lg font-bold leading-relaxed text-white">{botAnswers[botAnswerIndex].question_text}</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {['A', 'B', 'C', 'D'].map((label) => {
+                    const optKey = `option_${label.toLowerCase()}`;
+                    const botAnswer = botAnswers[botAnswerIndex];
+                    const isSelected = botPhaseStep === 'answered' && botAnswer.selected_option === label;
+                    const isCorrect = botPhaseStep === 'answered' && botAnswer.correct_option === label;
+
+                    let borderClass = 'border-white/10';
+                    if (botPhaseStep === 'answered') {
+                      if (isCorrect) borderClass = 'border-neon-yellow bg-neon-yellow/10';
+                      else if (isSelected && !botAnswer.is_correct) borderClass = 'border-destructive bg-destructive/10';
+                    }
+
+                    return (
+                      <div key={label} className={`border-2 rounded-lg p-4 transition-all ${borderClass}`}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center flex-shrink-0">
+                            <span className="font-bold text-white">{label}</span>
+                          </div>
+                          <p className="text-white font-medium flex-1">{botAnswer[optKey]}</p>
+                          {botPhaseStep === 'answered' && isSelected && (
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${botAnswer.is_correct ? 'bg-neon-yellow' : 'bg-destructive'}`}>
+                              <span className="text-xs font-bold text-white">{botAnswer.is_correct ? '\u2713' : '\u2717'}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {botPhaseStep === 'thinking' && (
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-2 bg-card border border-neon-blue/30 rounded-full px-4 py-2">
+                      <div className="w-2 h-2 bg-neon-blue rounded-full animate-pulse" />
+                      <div className="w-2 h-2 bg-neon-blue rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                      <div className="w-2 h-2 bg-neon-blue rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                      <span className="text-xs text-gray-400 ml-1">Thinking...</span>
+                    </div>
+                  </div>
+                )}
+
+                {botPhaseStep === 'answered' && (
+                  <div className="text-center">
+                    <p className={`text-lg font-bold ${botAnswers[botAnswerIndex].is_correct ? 'text-neon-yellow' : 'text-destructive'}`}>
+                      {botAnswers[botAnswerIndex].is_correct ? `Correct! +${botAnswers[botAnswerIndex].score}` : 'Wrong!'}
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* OPPONENT ANSWER PLAYBACK */}
+            {gamePhase === 'playback' && playbackAnswers && playbackAnswers.answers[playbackIndex] && (
+              <motion.div key="playback" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <img src={opponent?.avatar} alt="Opponent" className="w-10 h-10 rounded-full border-2 border-neon-pink" />
+                  <div>
+                    <p className="text-sm font-bold text-neon-pink uppercase flex items-center gap-2">
+                      <Eye size={16} /> {opponent?.username}'s answers - Round {playbackAnswers.round}
+                    </p>
+                    <p className="text-xs text-gray-500">Question {playbackIndex + 1}/{playbackAnswers.answers.length}</p>
+                  </div>
+                </div>
+
+                <PlaybackCard
+                  answer={playbackAnswers.answers[playbackIndex]}
+                  questionId={playbackAnswers.questions[playbackIndex]}
+                  onNext={advancePlayback}
+                  isLast={playbackIndex >= playbackAnswers.answers.length - 1}
+                />
+              </motion.div>
+            )}
+
+            {/* GAME OVER */}
             {gamePhase === 'game_over' && (
-              <motion.div
-                key="gameover"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center space-y-8 py-8"
-              >
+              <motion.div key="gameover" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-8 py-8">
                 <Trophy className={`mx-auto ${game.winner_id === user?.user_id ? 'text-neon-yellow' : 'text-gray-500'}`} size={96} />
-                
                 <div>
-                  <h2 className={`text-4xl font-extrabold tracking-tighter uppercase mb-2 ${
-                    game.winner_id === user?.user_id ? 'text-neon-yellow' : 'text-destructive'
-                  }`}>
+                  <h2 className={`text-4xl font-extrabold tracking-tighter uppercase mb-2 ${game.winner_id === user?.user_id ? 'text-neon-yellow' : 'text-destructive'}`}>
                     {game.winner_id === user?.user_id ? 'Victory!' : 'Defeat'}
                   </h2>
-                  <p className="text-gray-400">Game Over</p>
                 </div>
-
                 <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-6 shadow-neon-blue">
                   <div className="text-5xl font-black tracking-tighter mb-2">
-                    <span className={game.my_score > game.opponent_score ? 'text-neon-yellow' : 'text-gray-400'}>
-                      {game.my_score}
-                    </span>
+                    <span className={game.my_score > game.opponent_score ? 'text-neon-yellow' : 'text-gray-400'}>{game.my_score}</span>
                     <span className="text-gray-600 mx-2">-</span>
-                    <span className={game.opponent_score > game.my_score ? 'text-neon-yellow' : 'text-gray-400'}>
-                      {game.opponent_score}
-                    </span>
+                    <span className={game.opponent_score > game.my_score ? 'text-neon-yellow' : 'text-gray-400'}>{game.opponent_score}</span>
                   </div>
                   <p className="text-sm text-gray-500">Final Score</p>
                 </div>
-
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  data-testid="return-dashboard-btn"
-                  className="bg-gradient-to-r from-neon-blue to-neon-pink hover:from-neon-pink hover:to-neon-yellow h-12 px-8 rounded-sm font-bold uppercase tracking-wider shadow-neon-blue hover:shadow-neon-pink transition-all active:scale-95 text-white"
-                >
+                <button onClick={() => navigate('/dashboard')} data-testid="return-dashboard-btn"
+                  className="bg-gradient-to-r from-neon-blue to-neon-pink hover:from-neon-pink hover:to-neon-yellow h-12 px-8 rounded-sm font-bold uppercase tracking-wider shadow-neon-blue hover:shadow-neon-pink transition-all active:scale-95 text-white">
                   Return to Dashboard
                 </button>
               </motion.div>
@@ -392,5 +534,45 @@ export default function Game() {
         </div>
       </div>
     </Layout>
+  );
+}
+
+function PlaybackCard({ answer, onNext, isLast }) {
+  // answer has: question_id, selected_option, is_correct, time_taken, score
+  // We don't have the full question text in the playback data from the backend, so show what we have
+  return (
+    <div className="space-y-4">
+      <div className="bg-card border-2 border-neon-pink/30 rounded-lg p-5">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs text-gray-500">Time: {answer.time_taken?.toFixed(1)}s</span>
+          <span className={`text-sm font-bold ${answer.is_correct ? 'text-neon-yellow' : 'text-destructive'}`}>
+            {answer.is_correct ? `+${answer.score} pts` : '+0 pts'}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl font-black ${
+            answer.is_correct ? 'bg-neon-yellow/20 border-2 border-neon-yellow text-neon-yellow' : 'bg-destructive/20 border-2 border-destructive text-destructive'
+          }`}>
+            {answer.selected_option}
+          </div>
+          <div className="flex-1">
+            <p className="text-white font-bold">
+              Selected: <span className={answer.is_correct ? 'text-neon-yellow' : 'text-destructive'}>Option {answer.selected_option}</span>
+            </p>
+            <p className="text-xs text-gray-500">
+              {answer.is_correct ? 'Answered correctly' : `Correct answer was ${answer.correct_option || '?'}`}
+            </p>
+          </div>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${answer.is_correct ? 'bg-neon-yellow' : 'bg-destructive'}`}>
+            <span className="text-white text-sm font-bold">{answer.is_correct ? '\u2713' : '\u2717'}</span>
+          </div>
+        </div>
+      </div>
+
+      <button onClick={onNext} data-testid="playback-next-btn"
+        className="w-full bg-gradient-to-r from-neon-pink to-electric-purple hover:from-electric-purple hover:to-neon-pink h-11 px-6 rounded-sm font-bold uppercase tracking-wider text-white transition-all active:scale-95">
+        {isLast ? 'Your Turn' : 'Next Answer'}
+      </button>
+    </div>
   );
 }
