@@ -72,11 +72,7 @@ export default function Profile() {
         {/* Profile Card */}
         <div className="bg-card border-2 border-neon-blue/30 rounded-lg p-6 text-center shadow-neon-blue backdrop-blur-sm">
           <div className="relative inline-block">
-            <img
-              src={user?.avatar}
-              alt="Avatar"
-              className="w-24 h-24 rounded-full border-4 border-neon-pink mx-auto mb-1 shadow-neon-pink object-cover"
-            />
+            <TieredAvatar src={user?.avatar} alt="Avatar" tier={user?.player_tier || 1} size="xl" />
             <button
               onClick={() => fileInputRef.current?.click()}
               data-testid="change-avatar-btn"
