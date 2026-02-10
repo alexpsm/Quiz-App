@@ -15,6 +15,8 @@ export default function Profile() {
   const [gameHistory, setGameHistory] = useState([]);
   const [ranks, setRanks] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAllPlayers, setShowAllPlayers] = useState(false);
+  const [showAllHistory, setShowAllHistory] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
