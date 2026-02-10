@@ -1522,6 +1522,7 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
                 game.winner_id = game.player1_id
                 game.status = 'finished'
                 old_rank, new_rank, delta = await update_ball_knowledge(db, game, current_user)
+                bk_update = {"old": old_rank, "new": new_rank, "delta": delta}
             else:
                 game.current_round += 1
                 game.turn_player_id = game.player1_id
