@@ -49,10 +49,38 @@ Build a cross-platform, mobile-first web app called "QuizBall" — a football tr
 - [x] Weekly Club Wars (club vs club competition)
 - [x] Ad space placeholder
 
+### V3 Adaptive Matchmaking & Club Questions (December 2025)
+- [x] **Club-Specific Question Categories** — 86+ categories including "Manchester United-History", "Arsenal-Players", "Bayern Munich-Trophies", etc.
+- [x] **284 Club-Specific Questions** — Covers 18+ major clubs with History, Players, Managers, and Trophies categories
+- [x] **Skill-Based Matchmaking Queue** — New MatchmakingQueue table with skill_rank matching
+- [x] **ELO-Like Ranking System** — skill_rank updates after ranked (non-bot) games
+  - K-factor: 32
+  - Score bonus: up to 10 extra points based on score difference
+  - Minimum rank: 100
+- [x] **Matchmaking Endpoints:**
+  - POST /api/matchmaking/join — Join queue with skill_rank
+  - GET /api/matchmaking/status — Returns waiting/matched status with queue stats
+  - DELETE /api/matchmaking/leave — Leave queue
+  - POST /api/matchmaking/bot-fallback — Play bot when no opponent found
+- [x] **Dynamic Skill Range Expansion** — Starts at ±150, expands by 50 every 15s up to ±500
+- [x] **Frontend Ranked Match UI** — Shows skill rank, wait time, skill range, queue count, cancel button
+
 ## Pending (Backlog)
 - [ ] Full Facebook/X/Apple OAuth (needs developer credentials)
 - [ ] Firebase analytics
+- [ ] More club-specific questions for remaining clubs
 
 ## Test Credentials
-- Test user: testuser@quizball.com / Test12345
+- Test user: matchtest@test.com / Test123456
 - Admin: quizball_admin_2026
+
+## Key API Endpoints
+- POST /api/matchmaking/join — Join skill-based matchmaking queue
+- GET /api/matchmaking/status — Check matchmaking status
+- DELETE /api/matchmaking/leave — Leave matchmaking queue
+- POST /api/matchmaking/bot-fallback — Accept bot match
+- GET /api/questions/categories — Returns 86+ categories including club-specific
+
+## Database Schema Updates (V3)
+- **MatchmakingQueue table:** id, user_id, skill_rank, joined_at, status
+- Indexes: idx_matchmaking_skill, idx_matchmaking_status_skill
