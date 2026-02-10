@@ -10,11 +10,17 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Matchmaking() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [inviteCode, setInviteCode] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Ranked matchmaking state
+  const [isSearching, setIsSearching] = useState(false);
+  const [matchmakingStatus, setMatchmakingStatus] = useState(null);
+  const pollRef = useRef(null);
 
   // League state
   const [publicLeagues, setPublicLeagues] = useState([]);
@@ -26,6 +32,9 @@ export default function Matchmaking() {
 
   useEffect(() => {
     loadLeagues();
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
   }, []);
 
   const loadLeagues = async () => {
