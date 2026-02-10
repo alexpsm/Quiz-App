@@ -20,6 +20,7 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
+    checkAuth();
     loadData();
   }, []);
 
