@@ -659,6 +659,25 @@ export default function Game() {
                     <p className="text-3xl font-black text-neon-yellow">+{creditsWon}</p>
                   </motion.div>
                 )}
+                {tierUpdate && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.7 }}
+                    className="bg-card border-2 border-purple-500/50 rounded-lg p-5"
+                    data-testid="tier-update"
+                  >
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Tier Up!</p>
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="text-2xl font-black text-gray-400">Tier {tierUpdate.old_tier}</span>
+                      <span className="text-2xl font-black text-purple-400">&rarr;</span>
+                      <span className="text-2xl font-black text-purple-300">Tier {tierUpdate.new_tier}</span>
+                    </div>
+                    {tierUpdate.credits_awarded > 0 && (
+                      <p className="text-sm text-neon-yellow mt-2 font-bold">+{tierUpdate.credits_awarded} credits reward!</p>
+                    )}
+                  </motion.div>
+                )}
                 <button onClick={() => navigate('/dashboard')} data-testid="return-dashboard-btn"
                   className="bg-gradient-to-r from-neon-blue to-neon-pink hover:from-neon-pink hover:to-neon-yellow h-12 px-8 rounded-sm font-bold uppercase tracking-wider shadow-neon-blue hover:shadow-neon-pink transition-all active:scale-95 text-white">
                   Return to Dashboard
