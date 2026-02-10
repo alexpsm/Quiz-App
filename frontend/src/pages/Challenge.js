@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Layout from '../components/Layout';
+import { Layout } from '../components/Layout';
 import { challengesApi, games } from '../lib/api';
 import { motion } from 'framer-motion';
 import { Trophy, Zap, Shield, Flame, Copy, Check, Users } from 'lucide-react';
