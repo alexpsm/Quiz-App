@@ -77,6 +77,12 @@ export default function Game() {
         if (currentRound && currentRound.category_selected) {
           setGamePhase('waiting');
         } else {
+          // Fresh round - reset all question state
+          setSelectedAnswer(null);
+          setFeedback(null);
+          setCurrentQuestions([]);
+          setCurrentQuestionIndex(0);
+          loadCategories();
           setGamePhase('category_selection');
         }
       }
