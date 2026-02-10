@@ -847,7 +847,9 @@ async def quick_play(current_user: User = Depends(get_current_user), db: AsyncSe
         player2_id=bot.user_id,
         current_round=1,
         status='active',
-        turn_player_id=current_user.user_id
+        turn_player_id=current_user.user_id,
+        is_bot_game=True,
+        turn_started_at=datetime.now(timezone.utc)
     )
     db.add(game)
     await db.commit()
