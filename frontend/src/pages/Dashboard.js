@@ -6,6 +6,7 @@ import { Brain, Clock, Play, Users, Globe, Trophy, Shield, Swords, ChevronDown, 
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { PoweredByScore90 } from '../components/Score90Logo';
+import { AdBanner } from '../components/AdWidget';
 import { games, users } from '../lib/api';
 import api from '../lib/api';
 
