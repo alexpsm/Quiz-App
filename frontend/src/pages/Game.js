@@ -586,7 +586,7 @@ export default function Game() {
 
             {/* GAME OVER */}
             {gamePhase === 'game_over' && (
-              <motion.div key="gameover" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-8 py-8">
+              <motion.div key="gameover" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-8 py-8" data-testid="game-over-screen">
                 <Trophy className={`mx-auto ${game.winner_id === user?.user_id ? 'text-neon-yellow' : 'text-gray-500'}`} size={96} />
                 <div>
                   <h2 className={`text-4xl font-extrabold tracking-tighter uppercase mb-2 ${game.winner_id === user?.user_id ? 'text-neon-yellow' : 'text-destructive'}`}>
@@ -601,6 +601,24 @@ export default function Game() {
                   </div>
                   <p className="text-sm text-gray-500">Final Score</p>
                 </div>
+                {bkUpdate && bkUpdate.delta !== 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="bg-card border-2 border-neon-pink/30 rounded-lg p-5"
+                    data-testid="bk-update"
+                  >
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Ball Knowledge</p>
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="text-2xl font-black text-gray-400">{bkUpdate.old}</span>
+                      <span className={`text-2xl font-black ${bkUpdate.delta > 0 ? 'text-neon-yellow' : 'text-destructive'}`}>
+                        {bkUpdate.delta > 0 ? '+' : ''}{bkUpdate.delta}
+                      </span>
+                      <span className="text-2xl font-black text-white">{bkUpdate.new}</span>
+                    </div>
+                  </motion.div>
+                )}
                 <button onClick={() => navigate('/dashboard')} data-testid="return-dashboard-btn"
                   className="bg-gradient-to-r from-neon-blue to-neon-pink hover:from-neon-pink hover:to-neon-yellow h-12 px-8 rounded-sm font-bold uppercase tracking-wider shadow-neon-blue hover:shadow-neon-pink transition-all active:scale-95 text-white">
                   Return to Dashboard
