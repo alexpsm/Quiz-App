@@ -190,3 +190,18 @@ class MatchmakingQueue(Base):
         Index('idx_matchmaking_skill', 'skill_rank'),
         Index('idx_matchmaking_status_skill', 'status', 'skill_rank'),
     )
+
+
+class UserQuestionHistory(Base):
+    """Tracks which questions a user has been served to avoid repeats within 3 months"""
+    __tablename__ = 'user_question_history'
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
+    question_id = Column(String(36), ForeignKey('questions.id', ondelete='CASCADE'), nullable=False)
+    served_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index('idx_uqh_user_question', 'user_id', 'question_id'),
+        Index('idx_uqh_user_served', 'user_id', 'served_at'),
+    )
