@@ -188,7 +188,7 @@ export default function Store() {
           <div className="text-center mb-4">
             <Crown className="text-neon-yellow mx-auto mb-2" size={48} />
             <h3 className="text-2xl font-extrabold tracking-tighter uppercase text-white mb-1">Premium</h3>
-            <p className="text-sm text-gray-200">Remove all ads forever</p>
+            <p className="text-sm text-gray-200">Ad-free experience, updated monthly</p>
           </div>
           
           <div className="text-center mb-6">
