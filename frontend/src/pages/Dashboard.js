@@ -10,8 +10,7 @@ import api from '../lib/api';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { checkAuth } = useAuth();
+  const { user, checkAuth } = useAuth();
   const [activeGames, setActiveGames] = useState([]);
   const [ranks, setRanks] = useState(null);
   const [clubWar, setClubWar] = useState(null);
