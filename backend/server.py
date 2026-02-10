@@ -61,6 +61,7 @@ class UpdateProfileRequest(BaseModel):
     country: Optional[str] = None
     age: Optional[int] = None
     phone_number: Optional[str] = None
+    marketing_consent: Optional[bool] = None
 
 class QuestionCreate(BaseModel):
     question_text: str
@@ -326,6 +327,9 @@ async def update_profile(data: UpdateProfileRequest, current_user: User = Depend
     
     if data.phone_number is not None:
         current_user.phone_number = data.phone_number
+    
+    if data.marketing_consent is not None:
+        current_user.marketing_consent = data.marketing_consent
     
     # Check if this is initial profile setup — all required fields must be present
     missing = []
