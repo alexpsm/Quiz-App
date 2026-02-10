@@ -1709,6 +1709,192 @@ async def contribute_to_club_war(current_user: User = Depends(get_current_user),
     
     return {"game_id": game.id, "war_id": war.id}
 
+
+# ========== SKILL-BASED MATCHMAKING ENDPOINTS ==========
+
+MATCHMAKING_SKILL_RANGE = 150  # Initial skill range to search for opponents
+MATCHMAKING_EXPANSION_RATE = 50  # Expand range by this amount each check
+MATCHMAKING_MAX_RANGE = 500  # Maximum skill range
+MATCHMAKING_TIMEOUT_SECONDS = 120  # 2 minutes before expanding to bot match
+
+@api_router.post("/matchmaking/join")
+async def join_matchmaking_queue(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Join the skill-based matchmaking queue"""
+    # Check if already in queue
+    existing = await db.execute(
+        select(MatchmakingQueue).where(
+            MatchmakingQueue.user_id == current_user.user_id,
+            MatchmakingQueue.status == 'waiting'
+        )
+    )
+    if existing.scalar_one_or_none():
+        return {"status": "already_queued", "message": "Already in matchmaking queue"}
+    
+    # Add to queue
+    queue_entry = MatchmakingQueue(
+        id=str(uuid.uuid4()),
+        user_id=current_user.user_id,
+        skill_rank=current_user.skill_rank or 1000,
+        status='waiting'
+    )
+    db.add(queue_entry)
+    await db.commit()
+    
+    return {
+        "status": "queued",
+        "skill_rank": current_user.skill_rank or 1000,
+        "message": "Added to matchmaking queue"
+    }
+
+@api_router.delete("/matchmaking/leave")
+async def leave_matchmaking_queue(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Leave the matchmaking queue"""
+    result = await db.execute(
+        select(MatchmakingQueue).where(
+            MatchmakingQueue.user_id == current_user.user_id,
+            MatchmakingQueue.status == 'waiting'
+        )
+    )
+    entry = result.scalar_one_or_none()
+    
+    if entry:
+        await db.delete(entry)
+        await db.commit()
+        return {"status": "left", "message": "Left matchmaking queue"}
+    
+    return {"status": "not_in_queue", "message": "Not in matchmaking queue"}
+
+@api_router.get("/matchmaking/status")
+async def get_matchmaking_status(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Check matchmaking status and attempt to find a match"""
+    # Get user's queue entry
+    result = await db.execute(
+        select(MatchmakingQueue).where(
+            MatchmakingQueue.user_id == current_user.user_id
+        ).order_by(MatchmakingQueue.joined_at.desc())
+    )
+    my_entry = result.scalar_one_or_none()
+    
+    if not my_entry or my_entry.status != 'waiting':
+        return {"status": "not_queued"}
+    
+    my_rank = my_entry.skill_rank
+    wait_time = (datetime.now(timezone.utc) - my_entry.joined_at).total_seconds()
+    
+    # Calculate dynamic skill range based on wait time
+    # Expand range by 50 every 15 seconds
+    skill_range = min(
+        MATCHMAKING_MAX_RANGE,
+        MATCHMAKING_SKILL_RANGE + int(wait_time / 15) * MATCHMAKING_EXPANSION_RATE
+    )
+    
+    # Find potential opponents within skill range
+    potential_matches = await db.execute(
+        select(MatchmakingQueue).options(selectinload(MatchmakingQueue.user)).where(
+            MatchmakingQueue.user_id != current_user.user_id,
+            MatchmakingQueue.status == 'waiting',
+            MatchmakingQueue.skill_rank >= my_rank - skill_range,
+            MatchmakingQueue.skill_rank <= my_rank + skill_range
+        ).order_by(
+            func.abs(MatchmakingQueue.skill_rank - my_rank)
+        ).limit(1)
+    )
+    opponent_entry = potential_matches.scalar_one_or_none()
+    
+    if opponent_entry:
+        # Match found! Create game
+        game = Game(
+            id=str(uuid.uuid4()),
+            player1_id=current_user.user_id,
+            player2_id=opponent_entry.user_id,
+            current_round=1,
+            status='active',
+            turn_player_id=current_user.user_id,
+            is_bot_game=False,
+            turn_started_at=datetime.now(timezone.utc)
+        )
+        db.add(game)
+        
+        # Mark both queue entries as matched
+        my_entry.status = 'matched'
+        opponent_entry.status = 'matched'
+        
+        await db.commit()
+        await db.refresh(game)
+        
+        return {
+            "status": "matched",
+            "game_id": game.id,
+            "opponent": {
+                "user_id": opponent_entry.user.user_id,
+                "username": opponent_entry.user.username,
+                "avatar": opponent_entry.user.avatar,
+                "skill_rank": opponent_entry.user.skill_rank
+            },
+            "skill_diff": abs(my_rank - opponent_entry.skill_rank)
+        }
+    
+    # No match yet - check if should offer bot match
+    if wait_time >= MATCHMAKING_TIMEOUT_SECONDS:
+        return {
+            "status": "waiting",
+            "wait_time": int(wait_time),
+            "skill_range": skill_range,
+            "offer_bot_match": True,
+            "message": f"No opponent found after {int(wait_time)}s. Play against bot?"
+        }
+    
+    # Get queue stats
+    queue_count = await db.execute(
+        select(func.count()).select_from(MatchmakingQueue).where(
+            MatchmakingQueue.status == 'waiting'
+        )
+    )
+    total_waiting = queue_count.scalar() or 0
+    
+    return {
+        "status": "waiting",
+        "wait_time": int(wait_time),
+        "skill_range": skill_range,
+        "players_in_queue": total_waiting,
+        "your_rank": my_rank
+    }
+
+@api_router.post("/matchmaking/bot-fallback")
+async def matchmaking_bot_fallback(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Accept bot match when no human opponent is found"""
+    # Remove from queue
+    result = await db.execute(
+        select(MatchmakingQueue).where(
+            MatchmakingQueue.user_id == current_user.user_id,
+            MatchmakingQueue.status == 'waiting'
+        )
+    )
+    queue_entry = result.scalar_one_or_none()
+    if queue_entry:
+        await db.delete(queue_entry)
+    
+    # Create bot game
+    bot = await get_or_create_bot(db)
+    bot.skill_rank = current_user.skill_rank or 1000
+    
+    game = Game(
+        id=str(uuid.uuid4()),
+        player1_id=current_user.user_id,
+        player2_id=bot.user_id,
+        current_round=1,
+        status='active',
+        turn_player_id=current_user.user_id,
+        is_bot_game=True,
+        turn_started_at=datetime.now(timezone.utc)
+    )
+    db.add(game)
+    await db.commit()
+    await db.refresh(game)
+    
+    return {"game_id": game.id, "opponent": BOT_USERNAME, "is_bot": True}
+
+
 app.include_router(api_router)
 
 # Serve uploaded files
