@@ -285,7 +285,7 @@ export default function Game() {
     handleAnswerSelect('X');
   };
 
-  const advancePlayback = () => {
+  const advancePlayback = async () => {
     if (playbackIndex < (playbackAnswers?.answers?.length || 0) - 1) {
       setPlaybackIndex(prev => prev + 1);
     } else {
@@ -299,7 +299,7 @@ export default function Game() {
       setBotAnswers(null);
       setBotAnswerIndex(0);
       setBotPhaseStep('idle');
-      loadCategories();
+      await loadCategories();
       setGamePhase('category_selection');
     }
   };
