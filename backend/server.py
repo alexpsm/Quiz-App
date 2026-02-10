@@ -1308,32 +1308,36 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
     is_player1 = game.player1_id == current_user.user_id
     
     if is_player1:
-        game_round.player1_answers.append({
+        answers = list(game_round.player1_answers or [])
+        answers.append({
             "question_id": data.question_id,
             "selected_option": data.selected_option,
             "is_correct": is_correct,
             "time_taken": data.time_taken,
             "score": score
         })
+        game_round.player1_answers = answers
         game_round.player1_score += score
         
         # Check if player1 completed all 3 questions
-        if len(game_round.player1_answers) >= 3:
+        if len(answers) >= 3:
             # Switch turn to player2
             game.turn_player_id = game.player2_id
             game.turn_started_at = datetime.now(timezone.utc)
     else:
-        game_round.player2_answers.append({
+        answers = list(game_round.player2_answers or [])
+        answers.append({
             "question_id": data.question_id,
             "selected_option": data.selected_option,
             "is_correct": is_correct,
             "time_taken": data.time_taken,
             "score": score
         })
+        game_round.player2_answers = answers
         game_round.player2_score += score
         
         # Check if player2 completed all 3 questions
-        if len(game_round.player2_answers) >= 3:
+        if len(answers) >= 3:
             # Round complete, move to next round
             if game.current_round >= 6:
                 # Game finished
