@@ -40,6 +40,7 @@ export default function Game() {
   const [botAnswers, setBotAnswers] = useState(null);
   const [botAnswerIndex, setBotAnswerIndex] = useState(0);
   const [botPhaseStep, setBotPhaseStep] = useState('idle'); // idle | thinking | answered
+  const [bkUpdate, setBkUpdate] = useState(null); // {old, new, delta}
   const [botCountdown, setBotCountdown] = useState(45);
   // Playback state
   const [playbackAnswers, setPlaybackAnswers] = useState(null);
