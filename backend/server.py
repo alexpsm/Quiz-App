@@ -427,6 +427,8 @@ async def get_me(current_user: User = Depends(get_current_user)):
         "avatar": current_user.avatar,
         "picture": current_user.picture,
         "skill_rank": current_user.skill_rank,
+        "player_tier": current_user.player_tier or 1,
+        "total_game_points": current_user.total_game_points or 0,
         "credits": current_user.credits,
         "is_admin": current_user.is_admin,
         "favorite_club": current_user.favorite_club,
