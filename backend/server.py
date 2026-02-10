@@ -1177,6 +1177,7 @@ async def bot_play(game_id: str, current_user: User = Depends(get_current_user),
     game_round.player2_answers = [{
         "question_id": a["question_id"],
         "selected_option": a["selected_option"],
+        "correct_option": a["correct_option"],
         "is_correct": a["is_correct"],
         "time_taken": a["time_taken"],
         "score": a["score"]
