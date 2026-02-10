@@ -67,7 +67,7 @@ export default function ClubLeaderboard() {
             </div>
           </div>
 
-          <PoweredByScore90 size="sm" className="mb-4" />
+          <PoweredByScore90 size="sm" variant="styled" className="mb-4" />
 
           {/* User Stats Card */}
           {leaderboard && leaderboard.user_rank && (

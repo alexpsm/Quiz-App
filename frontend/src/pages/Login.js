@@ -54,7 +54,7 @@ export default function Login() {
           <h1 className="text-6xl font-extrabold tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-neon-pink to-neon-yellow mb-3">
             QuizBall
           </h1>
-          <PoweredByScore90 size="md" className="justify-center mb-3" />
+          <PoweredByScore90 size="md" variant="neon" className="justify-center mb-3" />
           <p className="text-base text-gray-300">
             Prove your <span className="text-neon-yellow font-bold">Ball Knowledge</span>
           </p>

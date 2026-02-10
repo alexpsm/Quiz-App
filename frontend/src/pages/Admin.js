@@ -135,7 +135,7 @@ export default function Admin() {
           <h1 className="text-3xl font-extrabold tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-neon-pink to-neon-yellow mb-2">
             Question Manager
           </h1>
-          <PoweredByScore90 size="sm" className="justify-center" />
+          <PoweredByScore90 size="sm" variant="styled" className="justify-center" />
           <p className="text-sm text-gray-400 mt-2">Add and manage trivia questions</p>
         </div>
 
