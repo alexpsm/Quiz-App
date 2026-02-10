@@ -258,6 +258,10 @@ export default function Game() {
         time_taken: timeTaken,
       });
 
+      if (response.data.ball_knowledge_update) {
+        setBkUpdate(response.data.ball_knowledge_update);
+      }
+
       setFeedback({ ...response.data, _questionIndex: qIndex });
       setGamePhase('feedback');
 
