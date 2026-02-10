@@ -1320,6 +1320,7 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
         if len(game_round.player1_answers) >= 3:
             # Switch turn to player2
             game.turn_player_id = game.player2_id
+            game.turn_started_at = datetime.now(timezone.utc)
     else:
         game_round.player2_answers.append({
             "question_id": data.question_id,
