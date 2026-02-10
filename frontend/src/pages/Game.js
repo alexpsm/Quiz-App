@@ -6,6 +6,7 @@ import { Layout } from '../components/Layout';
 import { PoweredByScore90 } from '../components/Score90Logo';
 import { useAuth } from '../context/AuthContext';
 import { TieredAvatar } from '../components/TieredAvatar';
+import { InlineAd, ResultsAd } from '../components/AdWidget';
 import { games, questions as questionsApi, challengesApi } from '../lib/api';
 
 const TIMER_DURATION = 15;
