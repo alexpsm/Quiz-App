@@ -216,9 +216,8 @@ export default function Game() {
 
   const loadCategories = async () => {
     try {
-      const response = await questionsApi.categories();
-      const all = response.data;
-      setCategories(all.sort(() => 0.5 - Math.random()).slice(0, 3));
+      const response = await questionsApi.randomClubs();
+      setCategories(response.data);
     } catch (error) {
       console.error('Failed to load categories:', error);
     }
