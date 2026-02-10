@@ -1565,7 +1565,8 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
     return {
         "is_correct": is_correct,
         "score": score,
-        "correct_option": question.correct_option
+        "correct_option": question.correct_option,
+        "ball_knowledge_update": bk_update
     }
 
 # ========== STRIPE PAYMENT ENDPOINTS ==========
