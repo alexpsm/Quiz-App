@@ -71,6 +71,8 @@ class Game(Base):
     current_round = Column(Integer, default=1)
     status = Column(String(20), default='active', index=True)
     turn_player_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'))
+    turn_started_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    is_bot_game = Column(Boolean, default=False)
     winner_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'))
     invite_code = Column(String(20), unique=True, index=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
