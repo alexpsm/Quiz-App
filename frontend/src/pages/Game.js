@@ -627,6 +627,18 @@ export default function Game() {
                     </div>
                   </motion.div>
                 )}
+                {creditsWon && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className="bg-card border-2 border-neon-yellow/50 rounded-lg p-5"
+                    data-testid="credits-won"
+                  >
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Credits Won</p>
+                    <p className="text-3xl font-black text-neon-yellow">+{creditsWon}</p>
+                  </motion.div>
+                )}
                 <button onClick={() => navigate('/dashboard')} data-testid="return-dashboard-btn"
                   className="bg-gradient-to-r from-neon-blue to-neon-pink hover:from-neon-pink hover:to-neon-yellow h-12 px-8 rounded-sm font-bold uppercase tracking-wider shadow-neon-blue hover:shadow-neon-pink transition-all active:scale-95 text-white">
                   Return to Dashboard
