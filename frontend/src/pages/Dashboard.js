@@ -68,7 +68,7 @@ export default function Dashboard() {
             <h1 className="text-4xl font-extrabold tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-neon-pink to-neon-yellow">
               QuizBall
             </h1>
-            <PoweredByScore90 size="sm" variant="styled" className="mt-1" />
+            <PoweredByScore90 size="sm" variant="neon" className="mt-2" />
           </div>
           <div className="flex items-center gap-3">
             <TieredAvatar src={user?.avatar} alt={user?.username} tier={user?.player_tier || 1} size="md" />
