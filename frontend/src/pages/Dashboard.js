@@ -79,11 +79,7 @@ export default function Dashboard() {
             <PoweredByScore90 size="sm" className="mt-1" />
           </div>
           <div className="flex items-center gap-3">
-            <img
-              src={user?.avatar}
-              alt={user?.username}
-              className="w-12 h-12 rounded-full border-2 border-neon-blue shadow-neon-blue"
-            />
+            <TieredAvatar src={user?.avatar} alt={user?.username} tier={user?.player_tier || 1} size="md" />
             <div className="flex items-center gap-2 bg-card border-2 border-neon-yellow/50 rounded-lg px-4 py-2 shadow-neon-yellow">
               <Brain className="text-neon-yellow" size={20} />
               <span className="text-2xl font-black tracking-tighter text-neon-yellow">{user?.skill_rank || 1000}</span>
