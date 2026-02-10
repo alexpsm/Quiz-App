@@ -36,7 +36,7 @@ class TestStripePaymentCheckout:
         """POST /api/payments/checkout with credits_100 creates checkout URL"""
         response = authenticated_session.post(
             f"{BASE_URL}/api/payments/checkout",
-            json={"package_id": "credits_100", "origin_url": "https://ball-knowledge-test.preview.emergentagent.com"}
+            json={"package_id": "credits_100", "origin_url": "https://quizball-match.preview.emergentagent.com"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -49,7 +49,7 @@ class TestStripePaymentCheckout:
         """POST /api/payments/checkout with credits_500 creates checkout URL"""
         response = authenticated_session.post(
             f"{BASE_URL}/api/payments/checkout",
-            json={"package_id": "credits_500", "origin_url": "https://ball-knowledge-test.preview.emergentagent.com"}
+            json={"package_id": "credits_500", "origin_url": "https://quizball-match.preview.emergentagent.com"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -60,7 +60,7 @@ class TestStripePaymentCheckout:
         """POST /api/payments/checkout with credits_1000 creates checkout URL"""
         response = authenticated_session.post(
             f"{BASE_URL}/api/payments/checkout",
-            json={"package_id": "credits_1000", "origin_url": "https://ball-knowledge-test.preview.emergentagent.com"}
+            json={"package_id": "credits_1000", "origin_url": "https://quizball-match.preview.emergentagent.com"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -71,7 +71,7 @@ class TestStripePaymentCheckout:
         """POST /api/payments/checkout with premium creates checkout URL"""
         response = authenticated_session.post(
             f"{BASE_URL}/api/payments/checkout",
-            json={"package_id": "premium", "origin_url": "https://ball-knowledge-test.preview.emergentagent.com"}
+            json={"package_id": "premium", "origin_url": "https://quizball-match.preview.emergentagent.com"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -82,7 +82,7 @@ class TestStripePaymentCheckout:
         """POST /api/payments/checkout with invalid package_id returns 400"""
         response = authenticated_session.post(
             f"{BASE_URL}/api/payments/checkout",
-            json={"package_id": "invalid_package", "origin_url": "https://ball-knowledge-test.preview.emergentagent.com"}
+            json={"package_id": "invalid_package", "origin_url": "https://quizball-match.preview.emergentagent.com"}
         )
         assert response.status_code == 400
         data = response.json()
@@ -106,7 +106,7 @@ class TestStripePaymentStatus:
         # First create a checkout session
         checkout_response = authenticated_session.post(
             f"{BASE_URL}/api/payments/checkout",
-            json={"package_id": "credits_100", "origin_url": "https://ball-knowledge-test.preview.emergentagent.com"}
+            json={"package_id": "credits_100", "origin_url": "https://quizball-match.preview.emergentagent.com"}
         )
         session_id = checkout_response.json()["session_id"]
         
@@ -124,7 +124,7 @@ class TestStripePaymentStatus:
         # Create a checkout session
         checkout_response = authenticated_session.post(
             f"{BASE_URL}/api/payments/checkout",
-            json={"package_id": "credits_500", "origin_url": "https://ball-knowledge-test.preview.emergentagent.com"}
+            json={"package_id": "credits_500", "origin_url": "https://quizball-match.preview.emergentagent.com"}
         )
         session_id = checkout_response.json()["session_id"]
         
@@ -139,7 +139,7 @@ class TestStripePaymentStatus:
         # credits_100 is $0.99 = 99 cents
         checkout_response = authenticated_session.post(
             f"{BASE_URL}/api/payments/checkout",
-            json={"package_id": "credits_100", "origin_url": "https://ball-knowledge-test.preview.emergentagent.com"}
+            json={"package_id": "credits_100", "origin_url": "https://quizball-match.preview.emergentagent.com"}
         )
         session_id = checkout_response.json()["session_id"]
         

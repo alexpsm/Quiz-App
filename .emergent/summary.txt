@@ -1,0 +1,134 @@
+<analysis>**original_problem_statement:**
+The user wants to enhance the quiz application with two major features:
+1.  **Greater Question Variation:** Update the quiz database so that generic categories like 'club-history' are replaced with specific club names (e.g., 'Manchester United-history', 'Bayern Munich-history').
+2.  **Adaptive Matchmaking & Skill Score:**
+    *   Create adaptive matchmaking logic that pairs players based on their Ball Knowledge score ().
+    *   The Ball Knowledge score should increase or decrease after each match, depending on the match's difficulty (opponent's score) and the user's performance (win/loss).
+
+**User's preferred language**: English
+
+**what currently exists?**
+The application is a functional quiz game called QuizBall. Users can register, complete an onboarding process, play single-player games against a bot, create and join leagues, and view rankings. A Ball Knowledge score () exists for each user but is not currently used for matchmaking or dynamically updated based on performance. The question database uses static, generic categories stored in . There is no existing logic for skill-based matchmaking.
+
+**Last working item**:
+*   **Last item agent was working:** The agent had just begun investigating the user's new request for question variety and adaptive matchmaking. It started by exploring the current question data structure in  and confirming the absence of any matchmaking logic in .
+*   **Status:** NOT STARTED
+*   **Agent Testing Done:** N
+*   **Which testing method agent to use?** This feature requires significant backend changes. The agent should use a combination of  for initial endpoint testing and the  for comprehensive validation of the new matchmaking and score update logic.
+*   **User Testing Done:** N
+
+**All Pending/In progress Issue list**:
+There are no pending bugs or issues. The previous bug reported by the user has been resolved.
+
+**In progress Task List**:
+There are no tasks currently in progress. The agent is in the planning phase for the new feature request.
+
+**Upcoming and Future Tasks**
+*   **P0: Implement Dynamic Question Categories:**
+    *   **Task:** Modify the question-loading mechanism to support dynamic, club-specific categories (e.g., 'Manchester United-history').
+    *   **Files:**  (will need restructuring or replacement),  (game logic for fetching questions).
+    *   **Goal:** Increase question variety as requested by the user.
+
+*   **P0: Develop Skill-Based Matchmaking Logic:**
+    *   **Task:** Create a new backend endpoint and logic in  to match users with opponents who have a similar . This will likely involve creating a matchmaking queue or pool.
+    *   **Files:** .
+    *   **Goal:** Build the core of the adaptive matchmaking system.
+
+*   **P0: Implement Dynamic Ball Knowledge Score Updates:**
+    *   **Task:** Create backend logic to adjust a user's  after a match is completed. The adjustment should be based on the result (win/loss) and the  difference between the two players (i.e., an ELO-like system).
+    *   **Files:**  (logic to be triggered at game completion),  (if any changes to the  model are needed).
+    *   **Goal:** Make the Ball Knowledge score a meaningful representation of user skill.
+
+*   **P1: Implement Matchmaking Frontend UI:**
+    *   **Task:** Update the frontend to include a UI for users to enter the matchmaking queue.
+    *   **Files:**  or .
+    *   **Goal:** Allow users to access the new matchmaking feature.
+
+**Completed work in this session**
+- **Bug Fix (Multi-round Bot Game):** Resolved an issue where the first question of the second round was unanswerable. The fix involved resetting component state (, ) between rounds in .
+- **GDPR Consent:** Added a GDPR-compliant marketing opt-in checkbox to the onboarding screen () and updated the  model () and backend to store the consent.
+- **Onboarding Overhaul:**
+    - Replaced native HTML dropdowns with custom Shadcn  components to fix a rendering bug in .
+    - Updated club selection with a comprehensive list of teams from Premier League, Bundesliga, Ligue 1, and Serie A ().
+    - Made country, age, and phone number mandatory fields with backend validation.
+    - Updated user avatars to be more person-like footballer variations.
+- **Gameplay Timers & Playback:** Implemented a 3-hour turn timer for player-vs-player games, a 45-second turn for bot games, and a feature to watch a playback of the opponent's answers ().
+- **Stripe & Club Wars Integration:** Added Stripe integration for payments (, ) and a Club Wars weekly competition feature (, ).
+- **Core Features Implemented:** Avatar uploads, a full league system with leaderboards, and a Your Rank component showing global/club/country rankings.
+
+**Earlier issues found/mentioned but not fixed**
+None.
+
+**Known issue recurrence from previous fork**
+None.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Frontend:** React, Vite, TailwindCSS, Shadcn UI
+-   **Backend:** Python, Flask, SQLAlchemy
+-   **Database:** SQLite
+-   **Authentication:** JWT (JSON Web Tokens)
+
+**key DB schema**
+-   : uid=0(root) gid=0(root) groups=0(root), , , ,  (integer),  (string),  (string),  (integer),  (string),  (string),  (boolean).
+-   : uid=0(root) gid=0(root) groups=0(root), , , , , , , ,  (JSON),  (JSON),  (boolean),  (datetime).
+-   : uid=0(root) gid=0(root) groups=0(root), , , , , .
+-   : uid=0(root) gid=0(root) groups=0(root), ,  (JSON).
+-   : uid=0(root) gid=0(root) groups=0(root), , , , .
+
+**All files of reference**
+-   : This file contains the current question bank and will need to be restructured or re-interpreted to fulfill the user's request for more variety.
+-   : The main backend file where all new matchmaking and score update logic will be implemented.
+-   : Contains the  model, where the  is stored.
+-    / : These are the likely frontend locations for the new matchmaking UI.
+
+**Areas that need refactoring**
+-   **Monolithic Backend:**  contains all application logic (auth, user, game, leagues, payments). It should be broken down into smaller, more manageable Flask Blueprints (e.g., , ).
+-   **Static Question Data:** The question system relies on a single  file. Migrating this to a dedicated  table in the database would be more scalable and allow for easier management of dynamic, club-specific categories.
+
+**key api endpoints**
+-   
+-   
+-   
+-   
+-   
+-   
+-   
+-   
+-   
+-   
+
+**Critical Info for New Agent**
+-   You are starting a brand-new feature implementation. The previous agent only performed initial investigation.
+-   The matchmaking and skill-score systems must be built from the ground up. There is no existing code for this.
+-   The Ball Knowledge score is stored as  in the  table.
+-   The two main goals are **question variety** and **skill-based matchmaking**. These are your highest priority tasks.
+
+**documents and test reports created in this job**
+-   
+
+**Last 10 User Messages and any pending HUMAN messages**
+-    - **(PENDING)** This is the current and main task to be worked on.
+-    - **(RESOLVED)** User reported a bug that was successfully fixed.
+
+**Project Health Check:**
+-   **Broken:** None
+-   **Mocked:** Social login buttons (Google, Facebook, etc.) are UI-only and do not have functional backend implementations.
+
+**3rd Party Integrations**
+-   **Stripe (Payments):** Integrated for handling payments. Requires a User API Key ().
+-   **DiceBear (Avatars):** Used to generate SVG avatars. Does not require a key.
+
+**Testing status**
+-   **Testing agent used after significant changes:** YES
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** None
+-   **Known regressions:** None
+
+**Credentials to test flow:**
+New users can be registered via the UI. Previous tests used credentials like  with the password .
+
+**What agent forgot to execute**
+Nothing. All previous tasks and bug fixes have been completed. The current task is new.</analysis>
