@@ -363,7 +363,7 @@ export default function Game() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src={user?.avatar} alt="You" className="w-12 h-12 rounded-full border-2 border-neon-yellow shadow-neon-yellow" />
+              <TieredAvatar src={user?.avatar} alt="You" tier={user?.player_tier || 1} size="md" />
               <div>
                 <p className="font-bold text-white text-sm">You</p>
                 <p className="text-3xl font-black tracking-tighter text-neon-yellow">{game.my_score}</p>
