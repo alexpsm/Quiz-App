@@ -1277,13 +1277,26 @@ async def select_category(game_id: str, category: str, current_user: User = Depe
     
     # Build base query with exclusion of seen questions
     if game.status == 'club_challenge' and current_user.favorite_club:
+        # Club Challenge: questions about user's favorite club
         club_name = current_user.favorite_club
         base_filter = [
             Question.category == "Club",
             Question.question_text.ilike(f"%{club_name}%")
         ]
+        fallback_filter = [Question.category == "Club"]
     else:
-        base_filter = [Question.category == category]
+        # Regular game: category is a club name — filter questions mentioning that club
+        from clubs_data import get_all_clubs
+        all_clubs = get_all_clubs()
+        if category in all_clubs:
+            base_filter = [
+                Question.category == "Club",
+                Question.question_text.ilike(f"%{category}%")
+            ]
+            fallback_filter = [Question.category == "Club"]
+        else:
+            base_filter = [Question.category == category]
+            fallback_filter = base_filter
     
     # Try with exclusion first
     exclusion = [Question.id.notin_(seen_ids)] if seen_ids else []
@@ -1292,23 +1305,19 @@ async def select_category(game_id: str, category: str, current_user: User = Depe
     )
     questions = q_result.scalars().all()
     
-    # Fallback for club challenge: broaden to all Club questions (still excluding seen)
-    if len(questions) < 3 and game.status == 'club_challenge':
+    # Fallback: broaden to all Club questions (still excluding seen)
+    if len(questions) < 3:
         q_result = await db.execute(
-            select(Question).where(Question.category == "Club", *exclusion).order_by(func.random()).limit(3)
+            select(Question).where(*fallback_filter, *exclusion).order_by(func.random()).limit(3)
         )
         questions = q_result.scalars().all()
     
     # Ultimate fallback: allow repeats if the pool is exhausted
     if len(questions) < 3:
-        if game.status == 'club_challenge':
-            q_result = await db.execute(
-                select(Question).where(Question.category == "Club").order_by(func.random()).limit(3)
-            )
-        else:
-            q_result = await db.execute(
-                select(Question).where(Question.category == category).order_by(func.random()).limit(3)
-            )
+        q_result = await db.execute(
+            select(Question).where(*fallback_filter).order_by(func.random()).limit(3)
+        )
+        questions = q_result.scalars().all()
         questions = q_result.scalars().all()
     
     if len(questions) < 3:
