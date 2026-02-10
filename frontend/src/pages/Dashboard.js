@@ -310,10 +310,11 @@ export default function Dashboard() {
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <img
+                      <TieredAvatar
                         src={game.player2?.avatar || game.player1.avatar}
                         alt="Opponent"
-                        className="w-12 h-12 rounded-full border-2 border-neon-blue"
+                        tier={game.player2?.player_tier || 1}
+                        size="md"
                       />
                       <div>
                         <p className="font-bold text-white">
