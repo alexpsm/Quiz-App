@@ -291,13 +291,14 @@ class TestAchievementAwarding:
             questions = cat_response.json().get("questions", [])
             print(f"Got {len(questions)} questions")
             
-            # Answer 3 questions
+            # Answer 3 questions (use random answers since correct_option not exposed)
+            import random
             for i, q in enumerate(questions[:3]):
                 answer_response = TestAuthenticationFlow.session.post(
                     f"{BASE_URL}/api/games/{TestAchievementAwarding.game_id}/answer",
                     json={
                         "question_id": q["id"],
-                        "selected_option": q["correct_option"],  # Answer correctly
+                        "selected_option": random.choice(["A", "B", "C", "D"]),
                         "time_taken": 5.0
                     }
                 )
