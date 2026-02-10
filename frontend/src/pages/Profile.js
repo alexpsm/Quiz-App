@@ -231,7 +231,7 @@ export default function Profile() {
             <div className="text-center py-8 text-gray-500">Loading...</div>
           ) : (
             <div className="space-y-2">
-              {leaderboard.map((player, index) => (
+              {leaderboard.slice(0, showAllPlayers ? 10 : 5).map((player, index) => (
                 <motion.div
                   key={player.user_id}
                   initial={{ opacity: 0, x: -20 }}
@@ -257,6 +257,15 @@ export default function Profile() {
                   </div>
                 </motion.div>
               ))}
+              {leaderboard.length > 5 && (
+                <button
+                  onClick={() => setShowAllPlayers(!showAllPlayers)}
+                  data-testid="toggle-players-btn"
+                  className="w-full py-2 text-sm font-bold uppercase tracking-wider text-neon-blue hover:text-neon-pink transition-colors flex items-center justify-center gap-1"
+                >
+                  {showAllPlayers ? <><ChevronUp size={16} /> Show Less</> : <><ChevronDown size={16} /> Show Top 10</>}
+                </button>
+              )}
             </div>
           )}
         </div>
