@@ -225,3 +225,17 @@ class WeeklyChallenge(Base):
     win_amount = Column(Integer, nullable=False)
     bot_accuracy = Column(Float, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+class UserAchievement(Base):
+    """Tracks one-off achievement badges earned by users"""
+    __tablename__ = 'user_achievements'
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False, index=True)
+    achievement_id = Column(String(50), nullable=False, index=True)  # e.g., 'first_win', 'perfect_game'
+    earned_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    
+    __table_args__ = (
+        Index('idx_user_achievement', 'user_id', 'achievement_id', unique=True),
+    )
