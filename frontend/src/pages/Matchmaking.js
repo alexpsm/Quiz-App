@@ -46,6 +46,55 @@ export default function Matchmaking() {
     }
   };
 
+  // Ranked matchmaking functions
+  const startRankedSearch = async () => {
+    setError('');
+    try {
+      await api.post('/matchmaking/join');
+      setIsSearching(true);
+      setMatchmakingStatus({ status: 'waiting', wait_time: 0 });
+      
+      // Start polling for match status
+      pollRef.current = setInterval(async () => {
+        try {
+          const res = await api.get('/matchmaking/status');
+          setMatchmakingStatus(res.data);
+          
+          if (res.data.status === 'matched') {
+            clearInterval(pollRef.current);
+            setIsSearching(false);
+            navigate(`/game/${res.data.game_id}`);
+          }
+        } catch (err) {
+          console.error('Poll error:', err);
+        }
+      }, 2000);
+    } catch (err) {
+      setError('Failed to join matchmaking');
+    }
+  };
+
+  const cancelRankedSearch = async () => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    try {
+      await api.delete('/matchmaking/leave');
+    } catch (err) {
+      console.error('Failed to leave queue:', err);
+    }
+    setIsSearching(false);
+    setMatchmakingStatus(null);
+  };
+
+  const acceptBotMatch = async () => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    try {
+      const res = await api.post('/matchmaking/bot-fallback');
+      navigate(`/game/${res.data.game_id}`);
+    } catch (err) {
+      setError('Failed to start bot match');
+    }
+  };
+
   const handleCreateInvite = async () => {
     setLoading(true);
     setError('');
