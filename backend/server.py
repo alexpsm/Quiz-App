@@ -1317,10 +1317,14 @@ async def bot_play(game_id: str, current_user: User = Depends(get_current_user),
         total_p2 = sum(r.player2_score for r in game.rounds)
         game.winner_id = game.player1_id if total_p1 >= total_p2 else game.player2_id
         game.status = 'finished'
+        
+        # Update Ball Knowledge score
+        old_rank, new_rank, delta = await update_ball_knowledge(db, game, current_user)
     else:
         game.current_round += 1
         game.turn_player_id = game.player1_id
         game.turn_started_at = datetime.now(timezone.utc)
+        old_rank, new_rank, delta = None, None, None
     
     await db.commit()
     
@@ -1328,7 +1332,8 @@ async def bot_play(game_id: str, current_user: User = Depends(get_current_user),
         "bot_answers": bot_answers,
         "bot_score": bot_score,
         "round_complete": True,
-        "game_status": game.status
+        "game_status": game.status,
+        "ball_knowledge_update": {"old": old_rank, "new": new_rank, "delta": delta} if delta is not None else None
     }
 
 @api_router.post("/games/{game_id}/select-category")
