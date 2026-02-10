@@ -15,10 +15,35 @@ export default function Profile() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [gameHistory, setGameHistory] = useState([]);
   const [ranks, setRanks] = useState(null);
+  const [userAchievements, setUserAchievements] = useState({ earned: [], total_earned: 0, total_available: 0 });
   const [loading, setLoading] = useState(true);
   const [showAllPlayers, setShowAllPlayers] = useState(false);
   const [showAllHistory, setShowAllHistory] = useState(false);
+  const [showAllAchievements, setShowAllAchievements] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Icon mapping for achievements
+  const iconMap = {
+    trophy: Trophy,
+    flame: Flame,
+    fire: Flame,
+    zap: Zap,
+    star: Star,
+    clock: Clock,
+    play: Play,
+    gamepad: Gamepad2,
+    heart: Heart,
+    award: Award,
+    medal: Medal,
+    crown: Crown,
+    'trending-up': TrendingUp,
+    brain: Brain,
+    gem: Star,
+    flag: Flag,
+    shield: Shield,
+    home: Home,
+    'refresh-cw': RefreshCw,
+  };
 
   useEffect(() => {
     checkAuth();
@@ -27,14 +52,16 @@ export default function Profile() {
 
   const loadData = async () => {
     try {
-      const [lbRes, histRes, rankRes] = await Promise.allSettled([
+      const [lbRes, histRes, rankRes, achRes] = await Promise.allSettled([
         users.leaderboard(10),
         games.history(10),
-        users.myRank()
+        users.myRank(),
+        achievements.getMine()
       ]);
       if (lbRes.status === 'fulfilled') setLeaderboard(lbRes.value.data);
       if (histRes.status === 'fulfilled') setGameHistory(histRes.value.data);
       if (rankRes.status === 'fulfilled') setRanks(rankRes.value.data);
+      if (achRes.status === 'fulfilled') setUserAchievements(achRes.value.data);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
