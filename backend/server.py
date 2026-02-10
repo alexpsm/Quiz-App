@@ -1640,7 +1640,7 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
                 total_p2 = sum(r.player2_score for r in game.rounds)
                 game.winner_id = game.player1_id if total_p1 > total_p2 else game.player2_id
                 game.status = 'finished'
-                old_rank, new_rank, delta = await update_ball_knowledge(db, game, current_user)
+                old_rank, new_rank, delta, tier_up = await update_ball_knowledge(db, game, current_user)
                 bk_update = {"old": old_rank, "new": new_rank, "delta": delta}
                 
                 # P2P credit payout
