@@ -57,6 +57,7 @@ export default function Onboarding() {
   const [country, setCountry] = useState('');
   const [age, setAge] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [clubsByLeague, setClubsByLeague] = useState({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -113,6 +114,7 @@ export default function Onboarding() {
         country,
         age: parseInt(age),
         phone_number: phoneNumber,
+        marketing_consent: marketingConsent,
       });
       await checkAuth();
       navigate('/dashboard');
@@ -292,6 +294,29 @@ export default function Onboarding() {
                 </div>
               </div>
             </div>
+
+            {/* Marketing Consent */}
+            <label className="flex items-start gap-3 cursor-pointer group" data-testid="marketing-consent-label">
+              <div className="relative flex-shrink-0 mt-0.5">
+                <input
+                  type="checkbox"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  className="sr-only peer"
+                  data-testid="marketing-consent-checkbox"
+                />
+                <div className="w-5 h-5 rounded border-2 border-neon-blue/40 bg-black/50 peer-checked:bg-neon-blue peer-checked:border-neon-blue transition-all flex items-center justify-center group-hover:border-neon-blue/70">
+                  {marketingConsent && (
+                    <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6l3 3 5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <span className="text-xs text-gray-400 leading-relaxed">
+                I'd like to receive news, updates, and promotional offers from QuizBall and Score90 via email and push notifications. You can unsubscribe at any time. See our <a href="#" className="text-neon-blue hover:text-neon-pink underline">Privacy Policy</a>.
+              </span>
+            </label>
 
             {error && (
               <div className="bg-destructive/10 border-2 border-destructive rounded-sm p-3 text-sm text-destructive" data-testid="onboarding-error">
