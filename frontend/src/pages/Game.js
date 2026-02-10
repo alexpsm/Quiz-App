@@ -184,6 +184,8 @@ export default function Game() {
       const response = await games.selectCategory(gameId, category);
       setCurrentQuestions(response.data.questions);
       setCurrentQuestionIndex(0);
+      setSelectedAnswer(null);
+      setFeedback(null);
       setGamePhase('question');
       setStartTime(Date.now());
       setTimeLeft(TIMER_DURATION);
