@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Copy, Check, Share2, MessageCircle, Zap, Shield, Plus, X, Brain, Target, Loader2 } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { PoweredByScore90 } from '../components/Score90Logo';
+import { InlineAd } from '../components/AdWidget';
 import { games, leagues } from '../lib/api';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
