@@ -1151,12 +1151,12 @@ async def bot_play(game_id: str, current_user: User = Depends(get_current_user),
     if game.turn_player_id != game.player2_id:
         raise HTTPException(status_code=400, detail="Not the bot's turn")
     
-    # Get current round
+    # Get current round (use first() to handle potential duplicates gracefully)
     round_result = await db.execute(
         select(GameRound).where(
             GameRound.game_id == game_id,
             GameRound.round_number == game.current_round
-        )
+        ).order_by(GameRound.id).limit(1)
     )
     game_round = round_result.scalar_one_or_none()
     
@@ -1335,12 +1335,12 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
     if game.turn_player_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="Not your turn")
     
-    # Get current round
+    # Get current round (use first() to handle potential duplicates gracefully)
     round_result = await db.execute(
         select(GameRound).where(
             GameRound.game_id == game_id,
             GameRound.round_number == game.current_round
-        )
+        ).order_by(GameRound.id).limit(1)
     )
     game_round = round_result.scalar_one_or_none()
     
