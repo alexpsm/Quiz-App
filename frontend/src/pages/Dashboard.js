@@ -11,6 +11,7 @@ import api from '../lib/api';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { checkAuth } = useAuth();
   const [activeGames, setActiveGames] = useState([]);
   const [ranks, setRanks] = useState(null);
   const [clubWar, setClubWar] = useState(null);
@@ -18,6 +19,7 @@ export default function Dashboard() {
   const [showAllGames, setShowAllGames] = useState(false);
 
   useEffect(() => {
+    checkAuth();
     loadData();
   }, []);
 
