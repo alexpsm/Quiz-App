@@ -2382,129 +2382,305 @@ def get_current_week_bounds():
     end_of_week = start_of_week + timedelta(days=7)
     return start_of_week, end_of_week
 
-async def get_or_create_current_war(db: AsyncSession):
-    """Get or create the current week's club war"""
-    week_start, week_end = get_current_week_bounds()
-    
-    result = await db.execute(
-        select(ClubWar).where(
-            ClubWar.week_start == week_start,
-            ClubWar.status == 'active'
-        )
-    )
-    war = result.scalar_one_or_none()
-    
-    if not war:
-        war = ClubWar(
-            id=str(uuid.uuid4()),
-            week_start=week_start,
-            week_end=week_end,
-            status='active'
-        )
-        db.add(war)
-        await db.commit()
-        await db.refresh(war)
-    
-    return war
 
-@api_router.get("/club-wars/current")
-async def get_current_club_war(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    """Get the current week's club war leaderboard"""
-    war = await get_or_create_current_war(db)
+# ========== CAREER PATH CHALLENGE ==========
+
+# Initial 10 Career Path Challenges
+CAREER_PATH_DATA = [
+    {
+        "player_name": "Zlatan Ibrahimović",
+        "career_clubs": [
+            {"club": "Malmö FF", "years": "1999-2001", "order": 1},
+            {"club": "Ajax", "years": "2001-2004", "order": 2},
+            {"club": "Juventus", "years": "2004-2006", "order": 3},
+            {"club": "Inter Milan", "years": "2006-2009", "order": 4},
+            {"club": "Barcelona", "years": "2009-2010", "order": 5},
+            {"club": "AC Milan", "years": "2010-2012", "order": 6},
+            {"club": "Paris Saint-Germain", "years": "2012-2016", "order": 7},
+            {"club": "Manchester United", "years": "2016-2018", "order": 8},
+            {"club": "LA Galaxy", "years": "2018-2019", "order": 9},
+            {"club": "AC Milan", "years": "2020-2023", "order": 10},
+        ],
+        "hints": {"nationality": "Sweden", "position": "Striker"},
+        "difficulty": "normal"
+    },
+    {
+        "player_name": "Cristiano Ronaldo",
+        "career_clubs": [
+            {"club": "Sporting CP", "years": "2002-2003", "order": 1},
+            {"club": "Manchester United", "years": "2003-2009", "order": 2},
+            {"club": "Real Madrid", "years": "2009-2018", "order": 3},
+            {"club": "Juventus", "years": "2018-2021", "order": 4},
+            {"club": "Manchester United", "years": "2021-2022", "order": 5},
+            {"club": "Al-Nassr", "years": "2023-present", "order": 6},
+        ],
+        "hints": {"nationality": "Portugal", "position": "Forward"},
+        "difficulty": "easy"
+    },
+    {
+        "player_name": "Thierry Henry",
+        "career_clubs": [
+            {"club": "Monaco", "years": "1994-1999", "order": 1},
+            {"club": "Juventus", "years": "1999", "order": 2},
+            {"club": "Arsenal", "years": "1999-2007", "order": 3},
+            {"club": "Barcelona", "years": "2007-2010", "order": 4},
+            {"club": "New York Red Bulls", "years": "2010-2014", "order": 5},
+            {"club": "Arsenal", "years": "2012 (loan)", "order": 6},
+        ],
+        "hints": {"nationality": "France", "position": "Striker"},
+        "difficulty": "normal"
+    },
+    {
+        "player_name": "David Beckham",
+        "career_clubs": [
+            {"club": "Manchester United", "years": "1992-2003", "order": 1},
+            {"club": "Real Madrid", "years": "2003-2007", "order": 2},
+            {"club": "LA Galaxy", "years": "2007-2012", "order": 3},
+            {"club": "AC Milan", "years": "2009 (loan)", "order": 4},
+            {"club": "Paris Saint-Germain", "years": "2013", "order": 5},
+        ],
+        "hints": {"nationality": "England", "position": "Midfielder"},
+        "difficulty": "easy"
+    },
+    {
+        "player_name": "Nicolas Anelka",
+        "career_clubs": [
+            {"club": "Paris Saint-Germain", "years": "1996-1997", "order": 1},
+            {"club": "Arsenal", "years": "1997-1999", "order": 2},
+            {"club": "Real Madrid", "years": "1999-2000", "order": 3},
+            {"club": "Paris Saint-Germain", "years": "2000-2002", "order": 4},
+            {"club": "Liverpool", "years": "2001-2002 (loan)", "order": 5},
+            {"club": "Manchester City", "years": "2002-2005", "order": 6},
+            {"club": "Fenerbahçe", "years": "2005-2006", "order": 7},
+            {"club": "Bolton Wanderers", "years": "2006-2008", "order": 8},
+            {"club": "Chelsea", "years": "2008-2012", "order": 9},
+            {"club": "Shanghai Shenhua", "years": "2012", "order": 10},
+            {"club": "Juventus", "years": "2013", "order": 11},
+            {"club": "West Bromwich Albion", "years": "2013-2014", "order": 12},
+        ],
+        "hints": {"nationality": "France", "position": "Striker"},
+        "difficulty": "hard"
+    },
+    {
+        "player_name": "Samuel Eto'o",
+        "career_clubs": [
+            {"club": "Real Madrid", "years": "1997-2000", "order": 1},
+            {"club": "Leganés", "years": "1997-1998 (loan)", "order": 2},
+            {"club": "Espanyol", "years": "1998-1999 (loan)", "order": 3},
+            {"club": "Mallorca", "years": "2000-2004", "order": 4},
+            {"club": "Barcelona", "years": "2004-2009", "order": 5},
+            {"club": "Inter Milan", "years": "2009-2011", "order": 6},
+            {"club": "Anzhi Makhachkala", "years": "2011-2013", "order": 7},
+            {"club": "Chelsea", "years": "2013-2014", "order": 8},
+            {"club": "Everton", "years": "2014", "order": 9},
+            {"club": "Sampdoria", "years": "2014-2015", "order": 10},
+            {"club": "Antalyaspor", "years": "2015-2016", "order": 11},
+        ],
+        "hints": {"nationality": "Cameroon", "position": "Striker"},
+        "difficulty": "hard"
+    },
+    {
+        "player_name": "Ronaldinho",
+        "career_clubs": [
+            {"club": "Grêmio", "years": "1998-2001", "order": 1},
+            {"club": "Paris Saint-Germain", "years": "2001-2003", "order": 2},
+            {"club": "Barcelona", "years": "2003-2008", "order": 3},
+            {"club": "AC Milan", "years": "2008-2011", "order": 4},
+            {"club": "Flamengo", "years": "2011", "order": 5},
+            {"club": "Atlético Mineiro", "years": "2012-2014", "order": 6},
+            {"club": "Querétaro", "years": "2014-2015", "order": 7},
+            {"club": "Fluminense", "years": "2015", "order": 8},
+        ],
+        "hints": {"nationality": "Brazil", "position": "Attacking Midfielder"},
+        "difficulty": "normal"
+    },
+    {
+        "player_name": "Wayne Rooney",
+        "career_clubs": [
+            {"club": "Everton", "years": "2002-2004", "order": 1},
+            {"club": "Manchester United", "years": "2004-2017", "order": 2},
+            {"club": "Everton", "years": "2017-2018", "order": 3},
+            {"club": "D.C. United", "years": "2018-2019", "order": 4},
+            {"club": "Derby County", "years": "2020-2021", "order": 5},
+        ],
+        "hints": {"nationality": "England", "position": "Forward"},
+        "difficulty": "easy"
+    },
+    {
+        "player_name": "Cesc Fàbregas",
+        "career_clubs": [
+            {"club": "Arsenal", "years": "2003-2011", "order": 1},
+            {"club": "Barcelona", "years": "2011-2014", "order": 2},
+            {"club": "Chelsea", "years": "2014-2019", "order": 3},
+            {"club": "Monaco", "years": "2019-2022", "order": 4},
+            {"club": "Como 1907", "years": "2022-present", "order": 5},
+        ],
+        "hints": {"nationality": "Spain", "position": "Midfielder"},
+        "difficulty": "normal"
+    },
+    {
+        "player_name": "Robinho",
+        "career_clubs": [
+            {"club": "Santos", "years": "2002-2005", "order": 1},
+            {"club": "Real Madrid", "years": "2005-2008", "order": 2},
+            {"club": "Manchester City", "years": "2008-2010", "order": 3},
+            {"club": "Santos", "years": "2010 (loan)", "order": 4},
+            {"club": "AC Milan", "years": "2010-2015", "order": 5},
+            {"club": "Guangzhou Evergrande", "years": "2015", "order": 6},
+            {"club": "Atlético Mineiro", "years": "2016", "order": 7},
+            {"club": "Sivasspor", "years": "2018", "order": 8},
+            {"club": "İstanbul Başakşehir", "years": "2018-2020", "order": 9},
+            {"club": "Santos", "years": "2020", "order": 10},
+        ],
+        "hints": {"nationality": "Brazil", "position": "Winger"},
+        "difficulty": "hard"
+    },
+]
+
+
+async def get_todays_career_challenge(db: AsyncSession):
+    """Get or create today's career path challenge"""
+    from datetime import date
+    today = date.today()
     
-    # Aggregate club scores
     result = await db.execute(
-        select(
-            ClubWarContribution.club_name,
-            func.sum(ClubWarContribution.points).label('total_points'),
-            func.sum(ClubWarContribution.games_played).label('total_games'),
-            func.count(ClubWarContribution.user_id.distinct()).label('member_count')
-        ).where(
-            ClubWarContribution.club_war_id == war.id
-        ).group_by(ClubWarContribution.club_name).order_by(func.sum(ClubWarContribution.points).desc())
+        select(CareerPathChallenge).where(CareerPathChallenge.active_date == today)
     )
-    club_standings = result.all()
+    challenge = result.scalar_one_or_none()
     
-    # Get user's contribution
-    user_contrib = None
-    if current_user.favorite_club:
-        user_result = await db.execute(
-            select(ClubWarContribution).where(
-                ClubWarContribution.club_war_id == war.id,
-                ClubWarContribution.user_id == current_user.user_id
-            )
+    if not challenge:
+        # Pick a random challenge from the data based on day of year
+        day_index = today.timetuple().tm_yday % len(CAREER_PATH_DATA)
+        data = CAREER_PATH_DATA[day_index]
+        
+        challenge = CareerPathChallenge(
+            id=str(uuid.uuid4()),
+            player_name=data["player_name"],
+            career_clubs=data["career_clubs"],
+            hints=data.get("hints"),
+            difficulty=data.get("difficulty", "normal"),
+            active_date=today
         )
-        user_contrib_obj = user_result.scalar_one_or_none()
-        if user_contrib_obj:
-            user_contrib = {
-                "points": user_contrib_obj.points,
-                "games_played": user_contrib_obj.games_played
-            }
+        db.add(challenge)
+        await db.commit()
+        await db.refresh(challenge)
+    
+    return challenge
+
+
+@api_router.get("/career-challenge/today")
+async def get_career_challenge_today(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Get today's career path challenge"""
+    challenge = await get_todays_career_challenge(db)
+    
+    # Get user's attempt if exists
+    result = await db.execute(
+        select(CareerPathAttempt).where(
+            CareerPathAttempt.user_id == current_user.user_id,
+            CareerPathAttempt.challenge_id == challenge.id
+        )
+    )
+    attempt = result.scalar_one_or_none()
+    
+    total_clubs = len(challenge.career_clubs)
+    clubs_to_show = 1
+    guesses = []
+    solved = False
+    
+    if attempt:
+        clubs_to_show = attempt.clubs_revealed
+        guesses = attempt.guesses or []
+        solved = attempt.solved
+    
+    # Only reveal clubs up to clubs_to_show
+    revealed_clubs = challenge.career_clubs[:clubs_to_show]
     
     return {
-        "war_id": war.id,
-        "week_start": war.week_start.isoformat(),
-        "week_end": war.week_end.isoformat(),
-        "standings": [{
-            "rank": idx + 1,
-            "club_name": row.club_name,
-            "total_points": row.total_points or 0,
-            "total_games": row.total_games or 0,
-            "member_count": row.member_count or 0
-        } for idx, row in enumerate(club_standings)],
-        "my_contribution": user_contrib,
-        "my_club": current_user.favorite_club
+        "challenge_id": challenge.id,
+        "difficulty": challenge.difficulty,
+        "total_clubs": total_clubs,
+        "clubs_revealed": clubs_to_show,
+        "max_guesses": total_clubs,
+        "guesses_made": len(guesses),
+        "guesses": guesses,
+        "revealed_clubs": revealed_clubs,
+        "solved": solved,
+        "answer": challenge.player_name if solved else None,
+        "hints": challenge.hints if solved or clubs_to_show >= total_clubs // 2 else None
     }
 
-@api_router.post("/club-wars/contribute")
-async def contribute_to_club_war(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    """Start a quick play game that contributes to the club war"""
-    if not current_user.favorite_club:
-        raise HTTPException(status_code=400, detail="Select a club first to join Club Wars")
+
+class CareerGuess(BaseModel):
+    guess: str
+
+
+@api_router.post("/career-challenge/guess")
+async def submit_career_guess(
+    guess_data: CareerGuess,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Submit a guess for the career path challenge"""
+    challenge = await get_todays_career_challenge(db)
     
-    # Create a bot game for contribution
-    bot = await get_or_create_bot(db)
-    bot.skill_rank = current_user.skill_rank
-    
-    game = Game(
-        id=str(uuid.uuid4()),
-        player1_id=current_user.user_id,
-        player2_id=bot.user_id,
-        current_round=1,
-        status='active',
-        turn_player_id=current_user.user_id,
-        is_bot_game=True,
-        turn_started_at=datetime.now(timezone.utc)
-    )
-    db.add(game)
-    
-    # Create or update contribution
-    war = await get_or_create_current_war(db)
-    
+    # Get or create attempt
     result = await db.execute(
-        select(ClubWarContribution).where(
-            ClubWarContribution.club_war_id == war.id,
-            ClubWarContribution.user_id == current_user.user_id
+        select(CareerPathAttempt).where(
+            CareerPathAttempt.user_id == current_user.user_id,
+            CareerPathAttempt.challenge_id == challenge.id
         )
     )
-    contrib = result.scalar_one_or_none()
+    attempt = result.scalar_one_or_none()
     
-    if not contrib:
-        contrib = ClubWarContribution(
+    if not attempt:
+        attempt = CareerPathAttempt(
             id=str(uuid.uuid4()),
-            club_war_id=war.id,
             user_id=current_user.user_id,
-            club_name=current_user.favorite_club,
-            games_played=1
+            challenge_id=challenge.id,
+            guesses=[],
+            clubs_revealed=1
         )
-        db.add(contrib)
+        db.add(attempt)
+    
+    if attempt.solved:
+        return {"error": "Already solved", "solved": True, "answer": challenge.player_name}
+    
+    total_clubs = len(challenge.career_clubs)
+    if len(attempt.guesses or []) >= total_clubs:
+        return {"error": "No more guesses", "solved": False, "answer": challenge.player_name}
+    
+    # Check guess
+    guess = guess_data.guess.strip()
+    is_correct = guess.lower() == challenge.player_name.lower()
+    
+    # Update guesses
+    guesses = list(attempt.guesses or [])
+    guesses.append({"guess": guess, "correct": is_correct})
+    attempt.guesses = guesses
+    
+    if is_correct:
+        attempt.solved = True
+        attempt.completed_at = datetime.now(timezone.utc)
+        # Award credits based on how few guesses used
+        clubs_used = attempt.clubs_revealed
+        bonus_credits = max(10, 50 - (clubs_used * 5))
+        current_user.credits = (current_user.credits or 0) + bonus_credits
     else:
-        contrib.games_played += 1
+        # Reveal next club
+        attempt.clubs_revealed = min(attempt.clubs_revealed + 1, total_clubs)
     
     await db.commit()
-    await db.refresh(game)
     
-    return {"game_id": game.id, "war_id": war.id}
+    return {
+        "correct": is_correct,
+        "solved": attempt.solved,
+        "clubs_revealed": attempt.clubs_revealed,
+        "guesses_remaining": total_clubs - len(guesses),
+        "revealed_clubs": challenge.career_clubs[:attempt.clubs_revealed],
+        "answer": challenge.player_name if attempt.solved or len(guesses) >= total_clubs else None,
+        "credits_earned": bonus_credits if is_correct else None,
+        "hints": challenge.hints if attempt.solved or attempt.clubs_revealed >= total_clubs // 2 else None
+    }
 
 
 # ========== SKILL-BASED MATCHMAKING ENDPOINTS ==========
