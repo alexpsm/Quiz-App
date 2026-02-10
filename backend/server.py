@@ -1405,12 +1405,12 @@ async def bot_play(game_id: str, current_user: User = Depends(get_current_user),
             # Loser already had credits deducted at game start
         
         # Update Ball Knowledge score
-        old_rank, new_rank, delta = await update_ball_knowledge(db, game, current_user)
+        old_rank, new_rank, delta, tier_update = await update_ball_knowledge(db, game, current_user)
     else:
         game.current_round += 1
         game.turn_player_id = game.player1_id
         game.turn_started_at = datetime.now(timezone.utc)
-        old_rank, new_rank, delta = None, None, None
+        old_rank, new_rank, delta, tier_update = None, None, None, None
     
     await db.commit()
     
@@ -1420,7 +1420,8 @@ async def bot_play(game_id: str, current_user: User = Depends(get_current_user),
         "round_complete": True,
         "game_status": game.status,
         "ball_knowledge_update": {"old": old_rank, "new": new_rank, "delta": delta} if delta is not None else None,
-        "credits_won": credits_won if credits_won > 0 else None
+        "credits_won": credits_won if credits_won > 0 else None,
+        "tier_update": tier_update,
     }
 
 @api_router.post("/games/{game_id}/select-category")
