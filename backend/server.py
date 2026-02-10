@@ -1616,6 +1616,219 @@ async def submit_answer(game_id: str, data: AnswerSubmit, current_user: User = D
         "ball_knowledge_update": bk_update
     }
 
+
+# ========== WEEKLY CHALLENGES & CREDIT BETTING ==========
+
+CHALLENGE_CONFIG = [
+    {"difficulty": "easy", "bet": 5, "win": 15, "bot_accuracy": 0.55},
+    {"difficulty": "medium", "bet": 10, "win": 30, "bot_accuracy": 0.70},
+    {"difficulty": "hard", "bet": 15, "win": 45, "bot_accuracy": 0.80},
+    {"difficulty": "very_hard", "bet": 20, "win": 60, "bot_accuracy": 0.90},
+]
+
+CHALLENGE_THEMES = [
+    ("Stadiums", "Stadium Showdown"), ("History", "History Buff"),
+    ("Champions League", "European Glory"), ("Players", "Player Expert"),
+    ("Country", "International Master"), ("Fan Culture", "True Fan"),
+    ("League", "League Guru"), ("Rules", "Referee's Test"),
+    ("Terminology", "Football Lingo"), ("International Tournaments", "Tournament Trivia"),
+]
+
+async def ensure_weekly_challenges(db: AsyncSession):
+    """Generate 5 challenges for the current week if they don't exist"""
+    now = datetime.now(timezone.utc)
+    week_start = now - timedelta(days=now.weekday())
+    week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_end = week_start + timedelta(days=7)
+    
+    result = await db.execute(
+        select(WeeklyChallenge).where(WeeklyChallenge.week_start == week_start)
+    )
+    existing = result.scalars().all()
+    if len(existing) >= 5:
+        return existing
+    
+    # Generate 5 new challenges
+    import random as _rng
+    themes = _rng.sample(CHALLENGE_THEMES, min(5, len(CHALLENGE_THEMES)))
+    # Distribute difficulties: 1 easy, 2 medium, 1 hard, 1 very_hard
+    difficulties = [
+        CHALLENGE_CONFIG[0], CHALLENGE_CONFIG[1], CHALLENGE_CONFIG[1],
+        CHALLENGE_CONFIG[2], CHALLENGE_CONFIG[3],
+    ]
+    _rng.shuffle(difficulties)
+    
+    challenges = []
+    for i in range(5):
+        topic, title_base = themes[i]
+        cfg = difficulties[i]
+        ch = WeeklyChallenge(
+            id=str(uuid.uuid4()),
+            week_start=week_start,
+            week_end=week_end,
+            difficulty=cfg["difficulty"],
+            topic=topic,
+            title=f"{title_base}: {cfg['difficulty'].replace('_', ' ').title()}",
+            bet_amount=cfg["bet"],
+            win_amount=cfg["win"],
+            bot_accuracy=cfg["bot_accuracy"],
+        )
+        db.add(ch)
+        challenges.append(ch)
+    
+    await db.commit()
+    return challenges
+
+
+@api_router.get("/challenges/weekly")
+async def get_weekly_challenges(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    challenges = await ensure_weekly_challenges(db)
+    
+    # Check which ones the user has already played this week
+    ch_ids = [c.id for c in challenges]
+    played_result = await db.execute(
+        select(Game.challenge_id).where(
+            Game.player1_id == current_user.user_id,
+            Game.challenge_id.in_(ch_ids),
+        )
+    )
+    played_ids = {row[0] for row in played_result.all()}
+    
+    return [{
+        "id": c.id,
+        "difficulty": c.difficulty,
+        "topic": c.topic,
+        "title": c.title,
+        "bet_amount": c.bet_amount,
+        "win_amount": c.win_amount,
+        "bot_accuracy": c.bot_accuracy,
+        "played": c.id in played_ids,
+        "week_end": c.week_end.isoformat(),
+    } for c in challenges]
+
+
+@api_router.post("/challenges/{challenge_id}/start")
+async def start_challenge(challenge_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    # Get challenge
+    result = await db.execute(select(WeeklyChallenge).where(WeeklyChallenge.id == challenge_id))
+    challenge = result.scalar_one_or_none()
+    if not challenge:
+        raise HTTPException(status_code=404, detail="Challenge not found")
+    
+    now = datetime.now(timezone.utc)
+    if now > challenge.week_end:
+        raise HTTPException(status_code=400, detail="Challenge has expired")
+    
+    # Check if already played
+    existing = await db.execute(
+        select(Game).where(
+            Game.player1_id == current_user.user_id,
+            Game.challenge_id == challenge_id,
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="You already played this challenge")
+    
+    # Check credits
+    user_credits = current_user.credits or 0
+    if user_credits < challenge.bet_amount:
+        raise HTTPException(status_code=400, detail=f"Not enough credits. Need {challenge.bet_amount}, have {user_credits}")
+    
+    # Deduct credits
+    current_user.credits = user_credits - challenge.bet_amount
+    
+    # Get or create bot
+    bot = await get_or_create_bot(db)
+    
+    game = Game(
+        id=str(uuid.uuid4()),
+        player1_id=current_user.user_id,
+        player2_id=bot.user_id,
+        status='active',
+        game_type='challenge',
+        is_bot_game=True,
+        current_round=1,
+        turn_player_id=current_user.user_id,
+        turn_started_at=now,
+        credit_bet=challenge.bet_amount,
+        challenge_id=challenge_id,
+    )
+    db.add(game)
+    await db.commit()
+    
+    return {
+        "game_id": game.id,
+        "bet_amount": challenge.bet_amount,
+        "win_amount": challenge.win_amount,
+        "topic": challenge.topic,
+        "difficulty": challenge.difficulty,
+        "credits_remaining": current_user.credits,
+    }
+
+
+@api_router.post("/games/invite-bet")
+async def create_invite_bet(bet_amount: int = 0, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Create a P2P game with credit betting"""
+    if bet_amount < 0 or bet_amount > 50:
+        raise HTTPException(status_code=400, detail="Bet must be between 0 and 50 credits")
+    
+    if bet_amount > 0:
+        user_credits = current_user.credits or 0
+        if user_credits < bet_amount:
+            raise HTTPException(status_code=400, detail=f"Not enough credits. Need {bet_amount}, have {user_credits}")
+        current_user.credits = user_credits - bet_amount
+    
+    invite_code = generate_invite_code()
+    game = Game(
+        id=str(uuid.uuid4()),
+        player1_id=current_user.user_id,
+        status='pending',
+        game_type='pvp_bet',
+        current_round=1,
+        turn_player_id=current_user.user_id,
+        invite_code=invite_code,
+        credit_bet=bet_amount,
+    )
+    db.add(game)
+    await db.commit()
+    
+    return {
+        "game_id": game.id,
+        "invite_code": invite_code,
+        "bet_amount": bet_amount,
+        "credits_remaining": current_user.credits,
+    }
+
+
+@api_router.post("/games/join-bet/{invite_code}")
+async def join_bet_game(invite_code: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Join a P2P bet game"""
+    result = await db.execute(select(Game).where(Game.invite_code == invite_code, Game.status == 'pending'))
+    game = result.scalar_one_or_none()
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found or already started")
+    if game.player1_id == current_user.user_id:
+        raise HTTPException(status_code=400, detail="Cannot join your own game")
+    
+    bet = game.credit_bet or 0
+    if bet > 0:
+        user_credits = current_user.credits or 0
+        if user_credits < bet:
+            raise HTTPException(status_code=400, detail=f"Not enough credits. Need {bet}, have {user_credits}")
+        current_user.credits = user_credits - bet
+    
+    game.player2_id = current_user.user_id
+    game.status = 'active'
+    game.turn_started_at = datetime.now(timezone.utc)
+    await db.commit()
+    
+    return {
+        "game_id": game.id,
+        "bet_amount": bet,
+        "credits_remaining": current_user.credits,
+    }
+
+
 # ========== STRIPE PAYMENT ENDPOINTS ==========
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 from fastapi import Request
