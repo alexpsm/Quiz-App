@@ -87,6 +87,14 @@ QuizBall is a football quiz game with skill-based matchmaking and credit betting
 - **Prizes**: UCL Final Tickets, Signed Messi Jersey, PS5+FC25 Bundle, Stadium Tour
 - **Backend endpoint**: `POST /api/prize-draws/enter` deducts credits
 
+### Score90 Instagram Feed (NEW - Feb 2025)
+- Auto-playing carousel displayed during opponent's turn
+- Shows football content from @score90 Instagram
+- Navigation arrows and dot indicators for manual browsing
+- Progress bar shows auto-advance timing (4 second intervals)
+- "Follow" link and "While you wait" context messaging
+- Component: `/app/frontend/src/components/InstagramCarousel.js`
+
 ## Future/Backlog
 - Social OAuth (Facebook, Twitter, Apple)
 - Refactor server.py into Flask Blueprints
