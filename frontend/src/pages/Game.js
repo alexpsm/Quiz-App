@@ -206,6 +206,9 @@ export default function Game() {
   const triggerBotPlay = async () => {
     try {
       const response = await games.botPlay(gameId);
+      if (response.data.ball_knowledge_update) {
+        setBkUpdate(response.data.ball_knowledge_update);
+      }
       setBotAnswers(response.data.bot_answers);
       setBotAnswerIndex(0);
       setGamePhase('bot_live');
