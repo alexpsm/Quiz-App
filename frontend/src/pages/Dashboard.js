@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { TieredAvatar } from '../components/TieredAvatar';
-import { Brain, Clock, Play, Users, Globe, Trophy, Shield, Swords, ChevronDown, ChevronUp } from 'lucide-react';
+import { Brain, Clock, Play, Users, Globe, Trophy, Shield, User, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { PoweredByScore90 } from '../components/Score90Logo';
