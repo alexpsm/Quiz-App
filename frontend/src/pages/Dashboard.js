@@ -22,14 +22,14 @@ export default function Dashboard() {
 
   const loadData = async () => {
     try {
-      const [gamesRes, rankRes, warRes] = await Promise.all([
+      const [gamesRes, rankRes, warRes] = await Promise.allSettled([
         games.list(),
         users.myRank(),
-        api.get('/club-wars/current').catch(() => ({ data: null }))
+        api.get('/club-wars/current')
       ]);
-      setActiveGames(gamesRes.data);
-      setRanks(rankRes.data);
-      setClubWar(warRes.data);
+      if (gamesRes.status === 'fulfilled') setActiveGames(gamesRes.value.data);
+      if (rankRes.status === 'fulfilled') setRanks(rankRes.value.data);
+      if (warRes.status === 'fulfilled') setClubWar(warRes.value.data);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
