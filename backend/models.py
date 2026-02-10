@@ -172,3 +172,21 @@ class ClubWarContribution(Base):
         Index('idx_clubwar_user', 'club_war_id', 'user_id'),
         Index('idx_clubwar_club', 'club_war_id', 'club_name'),
     )
+
+
+class MatchmakingQueue(Base):
+    """Queue for skill-based matchmaking"""
+    __tablename__ = 'matchmaking_queue'
+    
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False, unique=True, index=True)
+    skill_rank = Column(Integer, nullable=False)
+    joined_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    status = Column(String(20), default='waiting')  # 'waiting', 'matched', 'expired'
+    
+    user = relationship('User')
+    
+    __table_args__ = (
+        Index('idx_matchmaking_skill', 'skill_rank'),
+        Index('idx_matchmaking_status_skill', 'status', 'skill_rank'),
+    )
