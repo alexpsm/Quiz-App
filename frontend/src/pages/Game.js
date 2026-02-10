@@ -61,8 +61,7 @@ export default function Game() {
       } else if (!g.is_my_turn && !isSolo) {
         // Check if bot game - trigger bot play
         if (g.is_bot_game) {
-          setGamePhase('bot_countdown');
-          setBotCountdown(45);
+          triggerBotPlay();
         } else {
           setGamePhase('waiting');
         }
