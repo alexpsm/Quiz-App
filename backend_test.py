@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 class QuizBallAPITester:
-    def __init__(self, base_url="https://ball-knowledge.preview.emergentagent.com"):
+    def __init__(self, base_url="https://football-quizzer-1.preview.emergentagent.com"):
         self.base_url = base_url
         self.session = requests.Session()  # Use session to handle cookies
         self.user_data = None

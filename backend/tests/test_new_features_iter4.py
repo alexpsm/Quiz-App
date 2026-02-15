@@ -10,7 +10,7 @@ import requests
 import os
 import uuid
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ball-knowledge.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://football-quizzer-1.preview.emergentagent.com')
 TEST_USER_EMAIL = "testuser@quizball.com"
 TEST_USER_PASSWORD = "Test12345"
 

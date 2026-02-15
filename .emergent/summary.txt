@@ -1,67 +1,76 @@
 <analysis>**original_problem_statement**: The user initially reported that the gameplay was extremely buggy and requested a full test and fix of all mechanics. Subsequently, the user made a series of feature requests:
 
 **PRODUCT REQUIREMENTS:**
-- Fix all gameplay bugs (club challenge completion, frontend state, showing correct answers).
+- Fix all gameplay bugs.
 - Implement a guardrail to prevent a user from being asked the same question twice in a 3-month period.
 - Remove the bot's artificial thinking time countdown.
-- Clean up the UI on the Profile and Dashboard pages to show the top 5 results (for game history and leaderboards) with an option to expand to 10.
-- Change the 'club' category to be a dynamic selection of 3 random, specific club names.
-- Modify the category selection to be a mix of random clubs and regular topics (e.g., History, Rules).
-- Create a Ball Knowledge score (ELO-like) that updates after each game based on the opponent and outcome.
-- Ensure the Ball Knowledge score updates live on the Home (Dashboard) and Profile screens.
-- Change the price of the premium subscription in the store to /bin/bash.99 per month.
-- Update the avatar for 'TheScore90Bot'.
-- Significantly expand the question database for all topics.
-- Make the bot's skill level in quick play games dynamically match the user's percentage of correct answers in the current game.
-- Introduce credit betting:
-    - A Challenge tab with 5 weekly topical challenges against the bot with varying difficulties, bets, and payouts (e.g., Hard: bet 15 to win 45).
-    - P2P betting on private games where the winner takes all credits bet.
-- Create achievement badges and player tiers (from 1-100). Tiers should require game points to advance, and leveling up should grant a credit reward. The user's tier should be displayed on their avatar.
+- Clean up the UI on the Profile and Dashboard pages.
+- Implement dynamic categories with a mix of clubs and topics.
+- Create a Ball Knowledge ELO-like score that updates live.
+- Change the premium subscription price to /bin/bash.99/month.
+- Update the bot's avatar.
+- Expand the question database.
+- Make the bot's skill level dynamic.
+- Introduce credit betting (Weekly Challenges and P2P).
+- Create achievement badges and player tiers.
+- Fix sign-in/sign-up authentication failures.
+- Add unobtrusive PolyMarket and FlashScore advertising widgets.
+- Add a Prize Draws section to the store page with specific entry criteria and timers.
+- Embed the The Score90 Instagram feed as a carousel to be shown during opponent's turns.
+- Refine the Instagram carousel to remove the bot's thinking time and display it alongside a compact answer view.
+- Replace the 'Weekly Club Wars' game mode with a 'Career Mode Challenge' based on a reference website.
+- Improve the styling of Powered By branding and Ball Knowledge text to match the app's aesthetic.
+- Add a Google AdMob-style sports advertising feed to the store page.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a functional football trivia game with several game modes: quick play (vs. bot), P2P challenges, and weekly solo challenges with credit betting. It features a Ball Knowledge skill rating, a credits system, and a player tiering system. The backend is a Flask/SQLAlchemy application, and the frontend is built with React.
+The application is a full-featured football trivia game. It includes several game modes: quick play (vs. bot), P2P challenges with credit betting, weekly topical challenges, and a daily Career Mode challenge. The app features a Ball Knowledge skill rating, a credits system, player tiers (1-100), and a separate achievement badge system. The UI incorporates ads for PolyMarket and FlashScore, a Prize Draws section in the store, and an embedded Instagram feed from The Score90 that appears during bot gameplay. The backend is Flask/SQLAlchemy, and the frontend is React.
 
 **Last working item**:
-- **Last item agent was working:** Implementation of a player tiering system. This involved adding  and  to the  model, creating backend logic to calculate tier progression and award credits upon game completion, and creating a new  React component to display the tier number on user avatars throughout the app (Dashboard, Profile, Game screen). The game-over screen was also updated to show tier-up notifications and credit rewards.
+- **Last item agent was working:** Adding a Google AdSense-style sports advertising feed to the ad space on the store page. This involved creating a new React component  to mimic the style of a real ad unit and integrating it into .
 - **Status:** USER VERIFICATION PENDING
 - **Agent Testing Done:** Y
 - **Which testing method agent to use?** Frontend testing agent
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-There are no pending or in-progress issues. All user requests have been addressed.
-
-**In progress Task List**:
-There are no tasks currently in progress.
+There are no high-priority pending issues.
 
 **Upcoming and Future Tasks**
-- **Upcoming Task (P0):** Clarify with the user if the implemented Player Tier system fully satisfies the achievement badges request, or if they desire a separate system for specific, one-off achievements (e.g., Win 10 games in a row).
+- **Upcoming Tasks:**
+    - **P0: Implement Prize Draw Entry Tracking:** The backend endpoint for entering prize draws is basic. A system to track user entries and display them (e.g., a My Entries tab) is needed, as suggested by the agent.
+    - **P1: Add More Career Mode Challenges:** The career mode currently has a limited set of 10 players. The user has indicated more will be added later.
+- **Future Tasks:**
+    - **P2: Implement Social OAuth:** Add login/signup options for Facebook, Twitter, and Apple.
+    - **P2: Refactor Backend:** Break down the monolithic  into organized Flask Blueprints (e.g., , , ).
+    - **P2: Refactor :** The  component is large and could be broken down into smaller, more manageable components.
+    - **P2: Use Alembic for Migrations:** Adopt a proper Alembic workflow for future database schema changes instead of manual SQL commands.
 
 **Completed work in this session**
-- **Gameplay Bug Fixes:** Resolved critical bugs preventing club challenges from finishing, fixed frontend state issues, and ensured game state is maintained on page reload.
-- **Question Uniqueness Guardrail:** Implemented a system using the  model in  to prevent users from seeing the same question within a 3-month period. Logic is in  in .
-- **Dynamic Categories:** Reworked the category system. It now presents a random mix of regular topics and specific club names, fetched from the  endpoint. This logic resides in  and is consumed by  in .
-- **Ball Knowledge & Dynamic Bot Skill:**
-    - Implemented the Ball Knowledge ELO-like score. Logic is in the  function in .
-    - Made the BK score update on the Dashboard and Profile pages by adding a  call on mount in  and .
-    - Made the bot's skill in quick play games dynamically adapt to the user's current game performance in  in .
-- **Credit Betting & Challenges:**
-    - Created a full-featured weekly challenge system with a new  page, backend models (), and API endpoints (, ).
-    - Implemented P2P credit betting in the private game invite flow.
-    - Payout logic for both modes is handled in  and  in .
-- **Player Tiers:**
-    - Implemented a 1-100 player tier system based on game points. The logic is in  in .
-    - Created a reusable  component to display the tier on avatars and integrated it across , , and .
-- **Database Expansion:** Significantly increased the number of questions for all categories and performed deduplication.
-- **UI/UX Enhancements:**
-    - Implemented collapsible sections on  and  to show the top 5 items with an option to expand.
-    - Updated the bot avatar and the premium subscription price ().
-    - Fixed a critical data loading bug on the profile page by using .
+- **Auth Fix:** Resolved a critical Google OAuth bug where the session cookie was not being set by the backend, fixing the sign in/sign up authentication seems to be failing issue.
+- **Achievement Badges System:** Implemented a full achievement system, separate from player tiers. This included a new  model, backend logic to award badges post-game, API endpoints, and UI on the profile page and game-over screen.
+- **Ad Widget Integration:** Created and integrated unobtrusive ad widgets for PolyMarket and FlashScore into the Dashboard, Game (category selection, game over), Challenge, and Matchmaking pages.
+- **Prize Draws Section:** Added a new Prize Draws section to the  page, displaying four distinct prize draws with images, countdown timers, credit costs, and tier-based entry requirements. A basic backend endpoint was created to handle entry attempts.
+- **Instagram Feed Carousel:**
+    - Implemented a carousel to display during opponent's turns in .
+    - Removed the bot thinking time delay and redesigned the UI to show the carousel alongside a more compact view of the bot's answers.
+    - Switched from a mocked implementation to embedding real posts from The Score90 Instagram account using native iframes.
+    - Fixed an issue where only the first post in the carousel would load by pre-loading all five embeds.
+- **Career Mode Challenge:**
+    - Completely removed the 'Weekly Club Wars' feature from the frontend and backend.
+    - Implemented a new 'Career Mode Challenge' game mode, cloning the concept from a reference site. This included new backend models (, , ), API endpoints, a new  page, and integration into the .
+- **UI/Styling Enhancements:**
+    - Redesigned the Powered by Score90 component with a new neon aesthetic and applied it consistently across the app (Login, Dashboard, Profile, etc.).
+    - Updated the Ball Knowledge text on the Onboarding screen and Dashboard to match the app's primary QuizBall font style and color.
+    - Added a Google AdSense-style ad banner to the Store page.
 
 **Earlier issues found/mentioned but not fixed**
-None.
+- **Issue 1:** A JavaScript error  was observed during testing on the  page.
+    - **Debug checklist:** The error seemed related to a  component and the . It was dismissed as a development-mode-only issue and did not block user flow, but the root cause was not fixed. Check the  file and its interaction with the  component from .
+    - **Why to solve this issue and what will be achieved with this?** Fixing it would ensure a smoother development experience and eliminate any potential for it to affect production builds.
+    - **Should Test frontend/backend/both after fix:** Frontend.
+    - **Is recurring issue?** N
 
 **Known issue recurrence from previous fork**
 - **Issue recurrence in previous fork:** N/A
@@ -72,74 +81,84 @@ None.
 
 
 **Key Technical Concepts**
-- **Backend:** Flask REST API, PostgreSQL database managed with SQLAlchemy ORM.
-- **Frontend:** React (with Hooks), React Router for navigation, Axios for API communication, and Context API for global state management ().
-- **Authentication:** Token-based authentication managed via browser cookies.
-- **Database Migrations:** Alembic is present, but recent schema changes were performed with manual SQL  commands.
+- **Backend:** Flask REST API, PostgreSQL database, SQLAlchemy ORM.
+- **Frontend:** React (with Hooks), React Router, Axios, Context API for state, Framer Motion for animations.
+- **Authentication:** Token-based (JWT) authentication, managed via browser cookies.
+- **Social Integration:** Instagram posts are embedded via native s, requiring no API key.
 
 **key DB schema**
 - **users**: uid=0(root) gid=0(root) groups=0(root), ,  (Ball Knowledge), , , .
-- **games**: uid=0(root) gid=0(root) groups=0(root), , , , , ,  (FK to weekly_challenges).
-- **user_question_history**: uid=0(root) gid=0(root) groups=0(root), , , .
-- **weekly_challenges**: uid=0(root) gid=0(root) groups=0(root), , , , .
+- **user_achievements**: uid=0(root) gid=0(root) groups=0(root), , , , .
+- **career_path_challenges**: uid=0(root) gid=0(root) groups=0(root), , , , .
+- **career_path_clubs**: uid=0(root) gid=0(root) groups=0(root), , , , .
+- **career_path_attempts**: uid=0(root) gid=0(root) groups=0(root), , , , .
+- *Note:  and  tables were logically removed.*
 
 **changes in tech stack**
 None.
 
 **All files of reference**
-- ****: Main application file containing all game logic, API endpoints, and new scoring/betting/tiering functions.
-- ****: Contains schema for all tables; updated with , , and new columns on  and .
-- ****: Core frontend file for gameplay; updated to handle new category logic and display post-game rewards (BK, credits, tier-ups).
-- ****: New page to display and start weekly challenges.
-- ****: New reusable component to render avatars with tier badges.
-- ****: Updated to fix data loading, add collapsible lists, and use .
-- ****: Updated to add collapsible lists and use .
-- ****: Updated with new API functions for fetching and starting challenges.
+- ****: Heavily modified to add logic for achievements and the new career mode, and to remove Club Wars logic.
+- ****: Updated with , , , and  models.  models removed.
+- ****: UI updated to replace Club Wars with the Career Mode Challenge and styling was updated.
+- ****: Significantly refactored to remove the bot countdown and integrate the Instagram carousel alongside a compact bot answer view.
+- ****: Modified to add the Prize Draws and Google Ad sections.
+- ****: New file for the career mode gameplay.
+- ****: New component that embeds real Instagram posts via iframes.
+- ****: Updated to include new styled variants for the Powered By branding.
+- **, **: New components for displaying ads.
 
 **Areas that need refactoring**:
-- **Database Migrations:** The use of manual  commands should be replaced by a proper Alembic workflow (FAILED: No 'script_location' key found in configuration., FAILED: No 'script_location' key found in configuration.) to ensure schema consistency and history.
-- **Componentization:**  has grown very large. It could be broken down into smaller, more manageable components (e.g., , , ).
-- **Backend Organization:**  contains the entire application. It should be split into Flask Blueprints for better organization (e.g., , ,  blueprints).
+- **Database Migrations:** Manual  commands were used. Future schema changes should use the  tool.
+- **Componentization:**  remains a very large component and could be broken down.
+- **Backend Organization:**  contains the entire application and should be split into Flask Blueprints.
 
 **key api endpoints**
-- : Starts a game vs. the bot.
-- : Creates a P2P game, now accepts an optional .
-- : Submits an answer; handles game completion and payouts for P2P/solo games.
-- : Triggers the bot's turn; handles game completion and payouts for bot games.
-- : Gets 3 random categories (mix of topics and clubs).
-- **New:** : Lists the 5 active weekly challenges.
-- **New:** : Starts a new game based on a weekly challenge.
+- : Enters a user into a prize draw.
+- : Lists all defined achievements.
+- : Fetches achievements for the current user.
+- : Fetches the current daily career challenge.
+- : Submits a guess for the career challenge.
+- **Removed:** All  endpoints.
 
 **Critical Info for New Agent**
-- **Database Schema Changes:** Be aware that previous schema modifications were done manually via . For future changes, you should attempt to use the  tool first to maintain a clean migration history.
-- **Centralized Scoring Logic:** All post-game calculations (Ball Knowledge, game points, tier updates, credit rewards) are now centralized in the  and  helper functions within .
-- **Achievement Clarification:** The user's request for achievement badges was implemented as player tiers. You should confirm with the user if this meets their expectation or if they envision a separate system for one-off achievements.
+- **Authentication Fix:** The main authentication issue reported by the user was due to the backend not setting a session cookie on Google OAuth callback. This was fixed in  in the  endpoint.
+- **Static Integrations:** The Instagram feed, PolyMarket/FlashScore ads, and Google Ad are all static implementations. They use  embeds or are styled components with hardcoded content and external links. They do not use live APIs, which avoids the need for user-provided credentials.
+- **Career Mode Replaces Club Wars:** The Career Mode Challenge is a complete replacement for the Weekly Club Wars feature. All backend models, API endpoints, and frontend components related to Club Wars have been removed.
+- **Mocked Features:** The prize draws are hardcoded on the frontend. The backend logic for entering a draw is minimal (checks credits and tier) but does not track entries or handle winner selection.
 
 **documents and test reports created in this job**
+-  (updated)
 - 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1. **User:** Create achievement badges and player tiers... - **Status:** COMPLETED (Player tiers were implemented; badges may need clarification).
-2. **User:** I want to introduce credit betting into the game... - **Status:** COMPLETED.
-3. **User:** match the bots skill level in a dynamic way..." - **Status:** COMPLETED.
-4. **User:** "Update the database with far more questions..." - **Status:** COMPLETED.
-5. **User:** "can you update it to the attached" (avatar image) - **Status:** COMPLETED.
-6. **User:** "update the TheScore90Bot avatar to this" - **Status:** COMPLETED.
-7. **User:** "Make the premium option 0.99 per month on the store" - **Status:** COMPLETED.
-8. **User:** "ensure ball knowledge score updates live..." - **Status:** COMPLETED.
-9. **User:** "Please create a system for updating a users ball knowledge score... - **Status:** COMPLETED.
-10. **User:** Not all topics should be clubs - but the clubs can be sued as categories. - **Status:** COMPLETED.
+1. **User:** add in a google admit sports advertising feed to the ad space on the store - **Status:** COMPLETED.
+2. **User:** Can you edit the Ball Knowledge on the onboarding screen with the same font as quizball... - **Status:** COMPLETED.
+3. **User:** ...it looks cheap on the Home Screen once youve logged in" (referring to Powered by logo) - **Status:** COMPLETED.
+4. **User:** "Can you increase the styling of the powered by to match more of the QuizBall aesthetic..." - **Status:** COMPLETED.
+5. **User:** "the instagram carousel only loads the first one. can you embed all five..." - **Status:** COMPLETED.
+6. **User:** "rename it career mode challenge and remove the easy tag" - **Status:** COMPLETED.
+7. **User:** "Get rid of weekly club wars and replace it with a game mode called career mode challenge..." - **Status:** COMPLETED.
+8. **User:** "Dont add in the bot thinking time and the carousel then... Have it display while the bot is picking its answers - **Status:** COMPLETED.
+9. **User:** Request to fetch real Instagram posts. User provided URLs as an alternative to API keys. - **Status:** COMPLETED.
+10. **User:** Lets do 1 (referring to implementing real Instagram feed instead of mocked). - **Status:** COMPLETED.
 
 **Project Health Check:**
-- **Broken:** None.
-- **Mocked:** The Stripe integration is a test implementation for one-time payments, not a true recurring subscription model, despite the UI text saying per month.
+- **Broken:** None identified.
+- **Mocked:**
+    - The Prize Draws on the store page are hardcoded.
+    - The Instagram carousel uses a static list of post URLs.
+    - The  component is a styled placeholder, not a live AdSense unit.
 
 **3rd Party Integrations**
-- **Stripe (Payments):** Uses Emergent LLM Key. Implemented for one-time checkout.
-- **OpenAI GPT-4o:** Uses Emergent LLM Key (used by the agent for development).
+- **Stripe (Payments):** Implemented for one-time checkout.
+- **OpenAI GPT-4o:** Used by the agent for development.
+- **Instagram:** Uses native  embeds to display public posts. No API key required.
+- **PolyMarket / FlashScore:** Integrated as static ad widgets with external links. No API integration.
+- **Google Ads:** A static  component mimics an ad unit. No live Google AdSense integration.
 
 **Testing status**
-- **Testing agent used after significant changes:** YES
+- **Testing agent used after significant changes:** YES, for the achievements feature.
 - **Troubleshoot agent used after agent stuck in loop:** NO
 - **Test files created:** None
 - **Known regressions:** None
@@ -148,5 +167,4 @@ None.
 New users can be registered on the application's sign-up page.
 
 **What agent forgot to execute**
-- The agent successfully executed all direct user requests. The only point of ambiguity is the interpretation of achievement badges as player tiers, which should be clarified.
-- The agent did not follow best practices for database migrations, opting for manual SQL commands instead of using the existing  tooling.</analysis>
+All user requests in this session were addressed. The agent correctly identified when full API integrations were not feasible without credentials and opted for robust, static alternatives (like iframe embeds for Instagram).</analysis>
